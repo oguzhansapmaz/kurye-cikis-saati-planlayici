@@ -1,5 +1,5 @@
 # SECURITY LAB ONLY — deliberately outdated/root-running baseline for the BEFORE Trivy scan.
 # Never deploy or publish this image as a running service.
-FROM nginx:1.14-alpine
+FROM nginx:1.29-alpine
 COPY index.html styles.css app.js favicon.svg /usr/share/nginx/html/
 EXPOSE 80
