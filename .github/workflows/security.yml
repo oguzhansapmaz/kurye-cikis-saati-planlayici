@@ -116,7 +116,7 @@ jobs:
           test -n "$WIF_PROVIDER" || { echo "Missing GCP_WORKLOAD_IDENTITY_PROVIDER secret"; exit 1; }
           test -n "$DEPLOYER_SERVICE_ACCOUNT" || { echo "Missing GCP_SERVICE_ACCOUNT secret"; exit 1; }
       - name: Download the exact image and Trivy report that passed CI
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: scanned-release-${{ github.sha }}
           path: release-artifact
