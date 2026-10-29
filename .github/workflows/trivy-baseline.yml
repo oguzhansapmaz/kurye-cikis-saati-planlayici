@@ -1,0 +1,34 @@
+name: Trivy BEFORE baseline — isolated image scan
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline-scan:
+    name: Build and scan the intentionally weak baseline image (never deploy)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Build the isolated baseline image
+        run: docker build --pull -f Dockerfile.baseline -t kurye-planlayici:baseline .
+      - name: Scan baseline image and export JSON
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: kurye-planlayici:baseline
+          format: json
+          output: trivy-before.json
+          exit-code: '0'
+          ignore-unfixed: false
+          vuln-type: os,library
+          severity: CRITICAL,HIGH,MEDIUM,LOW
+      - name: Upload baseline report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-before-${{ github.run_id }}
+          path: trivy-before.json
+          if-no-files-found: error
+          retention-days: 14

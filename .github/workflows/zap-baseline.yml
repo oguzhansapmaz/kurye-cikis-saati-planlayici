@@ -1,0 +1,30 @@
+name: OWASP ZAP baseline — own Vercel site
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Scan label for evidence (before or after the next UI/security changes)'
+        required: true
+        type: choice
+        options:
+          - before
+          - after
+        default: before
+
+permissions:
+  contents: read
+
+jobs:
+  zap-baseline:
+    name: Passive baseline scan of the owned Vercel site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scan only the Kuryeplan Vercel site
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: 'https://kurye-cikis-saati-planlayici.vercel.app/'
+          cmd_options: '-m 2'
+          fail_action: false
+          allow_issue_writing: false
+          artifact_name: zap-baseline-${{ inputs.stage }}
