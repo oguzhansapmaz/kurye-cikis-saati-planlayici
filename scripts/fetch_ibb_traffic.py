@@ -12,6 +12,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -29,18 +30,52 @@ ISTANBUL = ZoneInfo("Europe/Istanbul")
 USER_AGENT = "Kuryeplan-course-project/1.0 (scheduled open-data refresh)"
 
 
-def fetch_json(url: str, timeout: int = 25) -> Any:
+RETRYABLE_HTTP_CODES = {408, 425, 429, 500, 502, 503, 504}
+
+
+def fetch_json(url: str, timeout: int = 45, attempts: int = 3) -> Any:
+    """Fetch read-only JSON with bounded retries for transient upstream failures.
+
+    The İBB history API occasionally times out even when the endpoint is healthy.
+    Retry timeouts, connection failures, rate limits, selected 5xx responses, and
+    incomplete JSON; never retry ordinary 4xx responses. All attempts are bounded.
+    """
     request = urllib.request.Request(
         url,
-        headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
+        headers={"User-Agent": USER_AGENT, "Accept": "application/json, */*"},
     )
-    with urllib.request.urlopen(request, timeout=timeout) as response:
-        if response.status != 200:
-            raise RuntimeError(f"Source returned HTTP {response.status}: {url}")
-        raw = response.read()
-        if len(raw) > 8_000_000:
-            raise RuntimeError("Source response exceeded the 8 MB safety limit")
-        return json.loads(raw.decode("utf-8-sig"))
+    if attempts < 1:
+        raise ValueError("attempts must be at least 1")
+
+    for attempt in range(1, attempts + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                if response.status != 200:
+                    raise RuntimeError(f"Source returned HTTP {response.status}: {url}")
+                raw = response.read()
+                if len(raw) > 8_000_000:
+                    raise RuntimeError("Source response exceeded the 8 MB safety limit")
+                return json.loads(raw.decode("utf-8-sig"))
+        except urllib.error.HTTPError as exc:
+            retryable = exc.code in RETRYABLE_HTTP_CODES
+            error: Exception = exc
+        except (urllib.error.URLError, TimeoutError, ConnectionError, json.JSONDecodeError) as exc:
+            retryable = True
+            error = exc
+
+        if not retryable or attempt >= attempts:
+            raise error
+
+        delay = min(2 ** attempt, 8)
+        print(
+            f"WARNING: request attempt {attempt}/{attempts} failed for {url}: "
+            f"{type(error).__name__}: {error}; retrying in {delay}s",
+            file=sys.stderr,
+        )
+        time.sleep(delay)
+
+    # The loop always returns or raises; this is a defensive guard for type checkers.
+    raise RuntimeError(f"Unable to fetch source after {attempts} attempts: {url}")
 
 
 def _rows_from_json(payload: Any) -> list[dict[str, Any]]:

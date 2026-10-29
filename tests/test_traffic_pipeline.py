@@ -1,10 +1,31 @@
+import json
 import unittest
 from datetime import datetime, timezone
+from unittest.mock import MagicMock, patch
+from urllib.error import URLError
 
-from scripts.fetch_ibb_traffic import build_payload, normalise_records
+from scripts.fetch_ibb_traffic import build_payload, fetch_json, normalise_records
 
 
 class TrafficPipelineTests(unittest.TestCase):
+
+    def test_fetch_json_retries_transient_timeout(self):
+        response = MagicMock()
+        response.__enter__.return_value.status = 200
+        response.__enter__.return_value.read.return_value = b'{"ok": true}'
+        with patch("scripts.fetch_ibb_traffic.urllib.request.urlopen", side_effect=[URLError("timed out"), URLError("timed out"), response]) as opener, patch("scripts.fetch_ibb_traffic.time.sleep", return_value=None):
+            payload = fetch_json("https://example.invalid/data", attempts=3)
+        self.assertEqual(payload, {"ok": True})
+        self.assertEqual(opener.call_count, 3)
+
+    def test_fetch_json_rejects_non_retryable_http_error_without_retries(self):
+        from urllib.error import HTTPError
+        error = HTTPError("https://example.invalid/data", 404, "not found", {}, None)
+        with patch("scripts.fetch_ibb_traffic.urllib.request.urlopen", side_effect=error) as opener, patch("scripts.fetch_ibb_traffic.time.sleep", return_value=None):
+            with self.assertRaises(HTTPError):
+                fetch_json("https://example.invalid/data", attempts=3)
+        self.assertEqual(opener.call_count, 1)
+
     def test_normalise_official_field_names_and_sort(self):
         source = [
             {"TrafficIndex": 47, "TrafficIndexDate": "2026-10-28T18:00:00"},
