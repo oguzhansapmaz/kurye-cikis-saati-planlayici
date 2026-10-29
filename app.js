@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  const STORAGE_KEY = 'kuryeplan.savedPlans.v1';
+  const STORAGE_NAMESPACE = 'kuryeplan.savedPlans.v1';
   const $ = (id) => document.getElementById(id);
   const form = $('planner-form');
   const fieldIds = ['order-id', 'courier-name', 'destination', 'deadline', 'prep-minutes', 'route-minutes', 'buffer-minutes'];
@@ -152,14 +152,14 @@
 
   function readSavedPlans() {
     try {
-      const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      const value = JSON.parse(localStorage.getItem(STORAGE_NAMESPACE) || '[]');
       return Array.isArray(value) ? value.filter((item) => item && item.id && item.exit && item.deadline) : [];
     } catch (_) { return []; }
   }
 
   function writeSavedPlans(plans) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(plans.slice(0, 20)));
+      localStorage.setItem(STORAGE_NAMESPACE, JSON.stringify(plans.slice(0, 20)));
       return true;
     } catch (_) {
       showToast('Tarayıcı kaydı başarısız. Depolama alanını kontrol et.');

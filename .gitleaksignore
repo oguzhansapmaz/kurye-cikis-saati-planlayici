@@ -1,0 +1,2 @@
+# Narrow, documented false positive from the first commit: app.js line 3 was a browser localStorage namespace, not a credential.
+app.js:generic-api-key:3
