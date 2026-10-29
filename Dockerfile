@@ -3,6 +3,10 @@
 FROM nginxinc/nginx-unprivileged:stable-alpine
 
 USER 0
+# Update the vulnerable Brotli decoder package.
+RUN apk update \
+ && apk upgrade brotli-libs \
+ && rm -rf /var/cache/apk/*
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --chown=101:101 index.html security.html styles.css app.js map.js favicon.svg /usr/share/nginx/html/
 COPY --chown=101:101 .well-known/security.txt /usr/share/nginx/html/.well-known/security.txt
