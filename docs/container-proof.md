@@ -36,7 +36,7 @@ Beklenen kanıt: `/healthz` `200` döner, tarayıcı sayfayı açar, security he
 - [ ] Plan kaydediliyor, sayfa yenilenince aynı tarayıcıda listede duruyor.
 - [ ] Plan silme ve tüm planları temizleme çalışıyor.
 - [ ] CSV indiriliyor; içeriği hesaplamayla tutarlı.
-- [ ] “Canlı trafik verisi kullanılmaz” notu görünüyor.
+- [ ] İBB trafik paneli veri çekilmediyse açık boş durum gösteriyor; veri geldiyse şehir geneli tarihsel indeks olduğunu ve rota ölçümü olmadığını belirtiyor.
 
 ## D. Güvenlik başlıkları
 

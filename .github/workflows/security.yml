@@ -3,6 +3,8 @@ name: Security gate and Cloud Run release
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'data/traffic.json'
   pull_request:
   workflow_dispatch:
 

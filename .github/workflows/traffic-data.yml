@@ -1,0 +1,77 @@
+name: İBB trafik verisini güncelle
+
+on:
+  schedule:
+    # 09:15 Europe/Istanbul (UTC+3); refresh once daily without rebuilding the Vercel site.
+    - cron: '15 6 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/fetch_ibb_traffic.py'
+      - '.github/workflows/traffic-data.yml'
+      - 'tests/test_traffic_pipeline.py'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ibb-traffic-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Fetch, validate and publish official traffic history
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout source on main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          persist-credentials: true
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Test parser and data contract
+        run: python -m unittest discover -s tests -v
+      - name: Restore previous daily snapshots from data branch, if present
+        shell: bash
+        run: |
+          git fetch origin traffic-data || true
+          if git cat-file -e origin/traffic-data:data/traffic.json 2>/dev/null; then
+            git show origin/traffic-data:data/traffic.json > data/traffic.json
+            echo 'Restored previous validated traffic JSON and daily snapshot history.'
+          else
+            echo 'No previous data branch; starting from empty schema on main.'
+          fi
+      - name: Fetch and validate IBB traffic data
+        run: python scripts/fetch_ibb_traffic.py
+      - name: Save generated JSON before switching branches
+        run: cp data/traffic.json "$RUNNER_TEMP/traffic.json"
+      - name: Publish JSON on data-only branch
+        shell: bash
+        run: |
+          # The generated JSON is saved in RUNNER_TEMP. Restore the main worktree before switching
+          # branches so a dirty data/traffic.json does not block checkout.
+          git reset --hard HEAD
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git ls-remote --exit-code --heads origin traffic-data >/dev/null 2>&1; then
+            git fetch origin traffic-data
+            git checkout -B traffic-data origin/traffic-data
+          else
+            git checkout --orphan traffic-data
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+          mkdir -p data
+          cp "$RUNNER_TEMP/traffic.json" data/traffic.json
+          git add data/traffic.json
+          if git diff --cached --quiet; then
+            echo 'No data changes to publish.'
+            exit 0
+          fi
+          git commit -m 'chore(data): refresh validated IBB traffic snapshot'
+          git push origin traffic-data

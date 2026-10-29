@@ -1,42 +1,52 @@
-# Başlamadan önce — Kurye Çıkış Saati Planlayıcı
+# Kuryeplan — güncel başlangıç rehberi
 
-Bu proje sıfırdan oluşturulmuş çalışan bir statik web uygulaması ve Bulut Bilişim ve Siber Güvenlik ödevi için güvenlik/dağıtım iskeletidir. Vercel'e UI dağıtımı yapılabilir; ancak ders kartındaki Docker ve Cloud Run/Container Apps gereksinimleri ayrıca tamamlanmalıdır.
+Kuryeplan, Kullanıcı Arayüzü Tasarımı (BVA 2245) ve Bulut Bilişim ve Siber Güvenlik ödevleri için ortak üründür. Ürün Vercel'de yayımlandı. İBB trafik veri hattı, planlama panosu ve test dosyaları bu sürümde eklendi; ilk gerçek veri çekimi ve son arayüz değişiklikleri sonrası doğrulama hâlâ yapılmalıdır.
 
-## 1. Web sitesini yerelde aç
+## 0. Başlangıç kanıtlarını kaydetmeden güncellemeyi uygulama
 
-`start-local.bat` dosyasına çift tıkla. Bu dosya projeyi yerel sunucuda açmayı dener ve varsa Anaconda Python yolunu kullanır. Açılmazsa Anaconda Prompt içinde proje klasörüne girip `C:\Anaconda3\envs\rayli-agi\python.exe -m http.server 8081 --bind 127.0.0.1` komutunu çalıştır ve `http://127.0.0.1:8081` adresini aç.
+Önce `Kuryeplan_Baseline_Taramalari_Once.zip` paketindeki iki workflow dosyasını mevcut klasöre ekleyip commit/push et. GitHub Actions'ta ZAP workflow'unu `before`, Trivy baseline workflow'unu elle çalıştır; Artifact dosyalarını indirip sakla. Bundan sonra `Kuryeplan_Kalan_Odev_Paketi.zip` içeriğini mevcut proje klasörünün üzerine çıkarıp yeni kodu commit/push edebilirsin. Bu sırayı uygularsan `before` raporları yeni sürümden önceki canlı siteyi ve yalnızca tarama amacıyla ayrılmış eski test imajını temsil eder. `.git` klasörünü silme.
 
-`index.html` dosyasını doğrudan açmak da arayüzün bir bölümünü göstermelidir; harita ise internet bağlantısı gerektirir.
+## 1. Yerelde aç
 
-## 2. GitHub'a koy
+Anaconda Prompt veya CMD ile proje köküne girip, sistemde mevcut Python'u kullan:
 
-1. GitHub'da `kurye-cikis-saati-planlayici` adında boş public repository oluştur; README/.gitignore seçme (bu klasörde ikisi de zaten var).
-2. Bu klasördeki **tüm dosya ve gizli klasörleri** GitHub'a gönder. `.github/workflows/` görünür olmalı. `.env`, key veya credentials ekleme.
-3. `git init`, `git add .`, `git commit`, `git branch -M main`, `git remote add origin ...`, `git push -u origin main` kullanılabilir. Repository URL'ni not et.
+```bat
+C:\Anaconda3\envs\rayli-agi\python.exe -m http.server 8081 --bind 127.0.0.1
+```
 
-## 3. Vercel yayını
+`http://127.0.0.1:8081` adresini aç. Harita için internet gerekir. Trafik paneli, `data/traffic.json` ilk kez gerçek verilerle doldurulana kadar boş durum gösterebilir; bu beklenen ve sahte sayı göstermeyen davranıştır.
 
-`docs/vercel-deployment.md` adımlarını izle. Vercel'de GitHub repo import edilir; build/install komutu gerekmez, site statik HTML/CSS/JS'dir. Canlı URL ve güvenlik başlıkları test edilmeden rapora başarılı diye yazma.
+## 2. Testler
 
-## 4. Docker güvenlik testi
+```bat
+C:\Anaconda3\envs\rayli-agi\python.exe -m unittest discover -s tests -v
+```
 
-`docs/container-proof.md` adımlarını izle. Docker Desktop gereklidir. Runtime user `101:101` olmalı ve read-only çalışma komutu başarıyla test edilmelidir.
+Veri hattını elle çalıştırmak için internete bağlıyken:
 
-## 5. Trivy “önce/sonra”
+```bat
+C:\Anaconda3\envs\rayli-agi\python.exe scripts\fetch_ibb_traffic.py
+```
 
-`docs/trivy-before-after.md` dosyasındaki komutları sırayla uygula. `Dockerfile.baseline` eski/root çalışan imajdır ve yalnızca local scan için vardır; asla deploy etme. JSON raporlarından gerçek kritik zafiyet sayılarını al.
+Başarısız kaynak yanıtı son başarılı `data/traffic.json` dosyasını değiştirmemelidir.
 
-## 6. CI ve Cloud Run
+## 3. İlk canlı veri çekimi
 
-GitHub Actions iş akışı: `.github/workflows/security.yml`. Gitleaks veya Trivy başarısız olursa release devam etmez. Cloud Run'a otomatik release için önce `docs/github-actions-oidc.md` ve `docs/cloud-run-deployment.md` adımlarını uygula. GCP/OIDC ayarları verilmediği sürece deploy job'u çalışmaz; bu beklenen güvenli varsayılandır.
+GitHub'a gönderdikten sonra **Actions → “İBB trafik verisini güncelle” → Run workflow** seç. Tamamlanırsa action `data/traffic.json` dosyasını commit eder. Başarısız olursa log'u incele; veriyi elle uydurarak doldurma. JSON boşsa dashboard'un “veri henüz hazır değil” mesajı göstermesi normaldir.
 
-## 7. Teslim kanıtları ve rapor
+## 4. Web yayını
 
-- `docs/security-report-template.md` şablonunu gerçek sonuçlarla doldur.
-- Gerçek ekran görüntülerini `docs/evidence/` içine al; public depoya hassas log veya anahtar koyma.
-- STRIDE risk tablosu `docs/stride-risk-register.csv` içindedir.
-- Bütçe alarmı ve izleme alarmı gerçekten kurulmalı. Sadece yönerge dosyası bu maddeleri tamamlamaz.
+Vercel mevcut depoya bağlıdır. Kaynak koda commit/push yaptıktan sonra Vercel deployment durumunu kontrol et. Vercel build komutu gerektiren bir framework kullanılmıyor; statik HTML/CSS/JS ve `data/traffic.json` yayımlanır.
 
-## Gerçek dışı başarı yazma
+## 5. Güvenlik ve kanıt
 
-Bu paket bir web uygulaması ve dosya iskeleti hazırlar. Senin GitHub/Vercel/Google Cloud hesabında yayın, Trivy, ZAP, Observatory, securityheaders, maliyet alarmı, izleme alarmı ve ekran görüntüsü henüz çalıştırılıp doğrulanmış değildir. Bunları ancak gerçek sonuçlar oluşunca “tamamlandı” olarak işaretle.
+- `.github/workflows/security.yml`: Gitleaks + Docker non-root/read-only + Trivy critical gate.
+- `.github/workflows/trivy-baseline.yml`: BEFORE imaj taraması; yalnızca rapor üretir ve baseline imajını yayımlamaz.
+- `.github/workflows/zap-baseline.yml`: sadece kendi Vercel sitene pasif ZAP baseline taraması; önce `before`, düzeltmeler/yeni sürüm sonrası `after`.
+- `docs/container-proof.md`, `docs/trivy-before-after.md`, `docs/security-checklist.md` gerçek test komutlarını ve kanıtları anlatır.
+
+Bulut sağlayıcısı/yayını, bütçe ve izleme alarmı kullanıcı isteğiyle şimdilik ertelenmiştir. Bunları tamamlandı gibi raporlama; kişisel karttaki Azure Container Apps/Google Cloud Run şartı için öğretim elemanıyla alternatif onayını netleştir.
+
+## 6. Durum
+
+Kod taslakları ve otomatik testler hazırdır. İlk gerçek İBB çekimi, live UI smoke test, ZAP before/after, Trivy baseline JSON, Lighthouse screenshot'ı, kullanıcı testi, 60–90 sn video, portföy yayını ve cloud/budget/log evidence hâlâ gerekli. Bu belgelerdeki kutuları ancak gerçek sonuç alındıktan sonra işaretle.

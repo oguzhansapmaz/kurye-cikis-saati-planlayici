@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "status": "empty",
+  "source": {
+    "name": "İBB Açık Veri Portalı — Trafik İndeks Değeri Web Servisi",
+    "datasetUrl": "https://data.ibb.gov.tr/dataset/trafik-indeks-degeri-web-servisi",
+    "apiHistoryUrl": "https://api.ibb.gov.tr/tkmservices/api/TrafficData/v1/TrafficIndexHistory/28/H",
+    "apiCurrentUrl": "https://api.ibb.gov.tr/tkmservices/api/TrafficData/v1/TrafficIndexHistory/1/5M",
+    "licenseUrl": "https://data.ibb.gov.tr/license",
+    "geography": "İstanbul geneli; ilçe/rota bazında ayrıştırılmaz"
+  },
+  "timezone": "Europe/Istanbul",
+  "fetchedAt": null,
+  "historyWindowDays": 28,
+  "historyCount": 0,
+  "observations": [],
+  "currentObservation": null,
+  "snapshots": [],
+  "warning": null,
+  "methodologyNote": "Tarihsel karşılaştırma ve planlama desteğidir; canlı rota süresi, ilçe bazlı trafik, navigasyon veya gelecek tahmini değildir."
+}

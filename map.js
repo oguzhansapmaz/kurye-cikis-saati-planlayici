@@ -1,14 +1,14 @@
 (function () {
   'use strict';
-  const frame = document.getElementById('izmir-map-frame');
+  const frame = document.getElementById('istanbul-map-frame');
   if (!frame) return;
   const presets = {
-    izmir: { title: 'İzmir geneli', description: 'İzmir merkez ve çevresini incele. Bölgeler arasında geçiş yaparak planına uygun alanı keşfet.', bbox: '26.88%2C38.22%2C27.38%2C38.58', zoomLink: '11/38.4237/27.1428' },
-    konak: { title: 'Konak', description: 'Konak ve çevresine yakınlaş. Merkez teslimat senaryolarını planlarken bölgenin sokak dokusunu inceleyebilirsin.', bbox: '27.08%2C38.39%2C27.17%2C38.47', zoomLink: '14/38.4189/27.1287' },
-    karsiyaka: { title: 'Karşıyaka', description: 'Karşıyaka kıyı şeridi ve çevresine odaklan. Bu görünüm yalnızca coğrafi referanstır; trafik bilgisi sağlamaz.', bbox: '27.05%2C38.44%2C27.17%2C38.51', zoomLink: '13/38.4595/27.1110' },
-    bornova: { title: 'Bornova', description: 'Bornova ve doğu İzmir yönünü incele. Yolculuk süresini güncel rota ve trafik bilgisi varsa ayrıca doğrulamalısın.', bbox: '27.16%2C38.43%2C27.28%2C38.49', zoomLink: '13/38.4622/27.2178' },
-    buca: { title: 'Buca', description: 'Buca çevresine yakınlaş. Bölgeyi görsel olarak değerlendirebilir, süre tahminini planlama formuna girebilirsin.', bbox: '27.13%2C38.34%2C27.23%2C38.40', zoomLink: '13/38.3741/27.1735' },
-    urla: { title: 'Urla', description: 'İzmir merkezinin batısındaki Urla bölgesine odaklan. Bu harita kurye hareketini veya canlı yol durumunu izlemez.', bbox: '26.65%2C38.28%2C26.87%2C38.40', zoomLink: '12/38.3220/26.7640' }
+    istanbul: { title: 'İstanbul geneli', description: 'İBB trafik indeksi İstanbul şehir geneli ölçümüdür. Haritayı başlangıç bölgesi olarak kullan; güzergâha özel trafik göstermez.', bbox: '28.55%2C40.80%2C29.45%2C41.30', zoomLink: '10/41.0082/28.9784' },
+    kadikoy: { title: 'Kadıköy', description: 'Anadolu yakasının önemli teslimat bölgelerinden birini incele. Tarihsel indeks burada sokak veya rota seviyesinde ayrıştırılmaz.', bbox: '29.00%2C40.96%2C29.12%2C40.99', zoomLink: '13/40.9906/29.0277' },
+    besiktas: { title: 'Beşiktaş', description: 'Boğaz kıyısı ve merkezî Beşiktaş bölgesini keşfet. Bu görünüm harita bağlamıdır; canlı trafik ölçümü değildir.', bbox: '28.99%2C41.03%2C29.04%2C41.08', zoomLink: '14/41.0430/29.0060' },
+    sisli: { title: 'Şişli', description: 'Merkez iş ve teslimat alanlarını haritada incele. Öneri motoru şehir geneli geçmiş indeksini kullanır.', bbox: '28.97%2C41.04%2C29.00%2C41.08', zoomLink: '14/41.0602/28.9877' },
+    uskudar: { title: 'Üsküdar', description: 'Anadolu yakasındaki Üsküdar bölgesini keşfet. Bu harita GPS veya gerçek zamanlı kurye konumu göstermez.', bbox: '29.00%2C41.01%2C29.06%2C41.04', zoomLink: '14/41.0255/29.0154' },
+    bakirkoy: { title: 'Bakırköy', description: 'Bakırköy ve çevresini harita üzerinden incele. Yolculuk süreleri planlama formunda kullanıcı tahmini olarak girilir.', bbox: '28.84%2C40.96%2C28.90%2C41.00', zoomLink: '14/40.9780/28.8720' }
   };
   const buttons = Array.from(document.querySelectorAll('[data-map-focus]'));
   const title = document.getElementById('map-focus-title');
@@ -29,6 +29,5 @@
   }
   buttons.forEach((button) => button.addEventListener('click', () => focus(button.dataset.mapFocus, true)));
   frame.addEventListener('error', () => { if (loadNote) loadNote.hidden = false; });
-  // A slow or blocked third-party map may never trigger iframe error; the fallback is a direct OSM link.
   buttons.forEach((button) => button.setAttribute('aria-pressed', button.classList.contains('active') ? 'true' : 'false'));
 })();

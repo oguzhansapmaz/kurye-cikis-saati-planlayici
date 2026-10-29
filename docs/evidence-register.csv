@@ -1,15 +1,21 @@
 Kanıt ID,İstenen kanıt,Beklenen konum,Durum
-E01,GitHub repo URL,README / rapor,Repo oluşturulunca doldur
-E02,Vercel canlı URL,README / rapor,Henüz yayınlanmadı
-E03,Cloud Run HTTPS URL,README / rapor,Henüz yayınlanmadı
-E04,Docker image inspect kullanıcı çıktısı,docs/evidence/container-user.png,Henüz alınmadı
-E05,Read-only çalıştırma ve health check,docs/evidence/readonly-test.png,Henüz alınmadı
-E06,Trivy baseline JSON ve kritik sayı,docs/evidence/trivy-before.json,Henüz taranmadı
-E07,Trivy hardened JSON ve kritik sayı,docs/evidence/trivy-after.json,Henüz taranmadı
-E08,GitHub Actions security gate run,docs/evidence/github-actions-run.png,Henüz çalıştırılmadı
-E09,OWASP ZAP baseline önce raporu,docs/evidence/zap-before.html,Henüz taranmadı
-E10,OWASP ZAP baseline sonra raporu,docs/evidence/zap-after.html,Henüz taranmadı
-E11,Observatory / securityheaders sonuçları,docs/evidence/headers.png,Canlı URL gerekli
-E12,Bulut bütçe alarmı,docs/evidence/budget-alert.png,Henüz kurulmadı
-E13,İzleme alarmı ve log,docs/evidence/monitoring-alert.png,Henüz kurulmadı
-E14,Gerçek tarih-saat ile demo ekran görüntüsü,docs/evidence/,Henüz alınmadı
+E01,GitHub repo URL,README / rapor,YAYINDA: https://github.com/oguzhansapmaz/kurye-cikis-saati-planlayici
+E02,Vercel canlı URL,README / rapor,YAYINDA: https://kurye-cikis-saati-planlayici.vercel.app/
+E03,Cloud Run/Azure Container Apps HTTPS URL,README / rapor,ERTELENDİ: öğretim elemanıyla platform şartı netleştirilecek
+E04,Container runtime user (`101:101` ve `id`) çıktısı,docs/evidence/container-user.png,CI testi için önceki başarılı koşu görüldü; güncel kod sonrası tekrar al
+E05,Read-only çalışma ve /healthz testi,docs/evidence/readonly-test.png,CI testi için önceki başarılı koşu görüldü; güncel kod sonrası tekrar al
+E06,Trivy baseline JSON ve kritik sayı,Actions artifact trivy-before-*,Gerçek baseline taraması bekliyor
+E07,Trivy hardened JSON ve kritik sayı,Actions artifact scanned-release-* / trivy-after.json,Önceki koşu screenshot'ında gate başarılı; gerçek JSON indirip sayıyı doğrula
+E08,GitHub Actions son güvenlik gate run,docs/evidence/github-actions-run.png,e0664f7 koşusu başarılıydı; traffic dashboard patch push sonrası yeni koşu bekliyor
+E09,OWASP ZAP baseline önce raporu,Actions artifact zap-baseline-before,Henüz çalıştırılmadı
+E10,OWASP ZAP baseline sonra raporu,Actions artifact zap-baseline-after,Henüz çalıştırılmadı
+E11,Observatory / securityheaders sonuçları,docs/evidence/headers.png,Canlı URL'de tarama ve screenshot gerekli
+E12,Bulut bütçe alarmı,docs/evidence/budget-alert.png,Cloud platformu kullanıcı talebiyle ertelendi
+E13,İzleme alarmı ve merkezî log,docs/evidence/monitoring-alert.png,Cloud platformu kullanıcı talebiyle ertelendi
+E14,Gerçek tarih-saat ile demo screenshot,docs/evidence/,Henüz alınmadı
+E15,İBB trafik veri akışı başarılı run ve data/traffic.json,Actions run / commit,İlk canlı çekim bekliyor; mevcut JSON boş ve sahte veri içermiyor
+E16,Lighthouse mobil raporu,docs/evidence/lighthouse-mobile.png,Henüz alınmadı
+E17,Kullanıcı testi 2 kişi × 3 görev,docs/user-test-template.csv,Gerçek katılımcı ölçümleri bekliyor
+E18,60–90 saniye ürün demo videosu,Portfolio vaka sayfası,Gerçek ekran kaydı bekliyor
+E19,Portföy vaka çalışması URL,docs/portfolio-case-study.md,İçerik taslağı hazır; portföye yayımlama bekliyor
+E20,İBB veri lisansını doğrulama,docs/data-license-review.md,Portal lisans şartları insan tarafından doğrulanmalı

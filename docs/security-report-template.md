@@ -1,20 +1,20 @@
 # Kurye Çıkış Saati Planlayıcı — Güvenlik ve Altyapı Raporu
 
-**Öğrenci:** Oğuzhan Sapmaz  
-**Öğrenci no:** 2516016021  
-**Ders:** Bulut Bilişim ve Siber Güvenlik  
-**Rapor sürümü/tarihi:** [Gerçek tarih ve saat]  
-**Vercel URL:** [Yayınlandıktan sonra ekle]  
-**Cloud Run URL:** [Yayınlandıktan sonra ekle]  
-**GitHub URL:** [Depo oluşturulduktan sonra ekle]
+**Öğrenci:** Oğuzhan Sapmaz
+**Öğrenci no:** 2516016021
+**Ders:** Bulut Bilişim ve Siber Güvenlik
+**Rapor sürümü/tarihi:** [Gerçek tarih ve saat]
+**Vercel URL:** https://kurye-cikis-saati-planlayici.vercel.app/
+**Bulut yayını:** Kullanıcı talebiyle şimdilik ertelendi; personal card cloud provider şartı öğretim elemanıyla netleştirilecek.
+**GitHub URL:** https://github.com/oguzhansapmaz/kurye-cikis-saati-planlayici
 
-> Bu dosya rapor şablonudur. Köşeli parantez içindeki alanları gerçek bulgular ve kanıtlarla tamamla. Çalıştırılmayan testleri başarılıymış gibi gösterme.
+> Bu dosya rapor taslağıdır; bulut, izleme/alarm, bütçe uyarısı, ZAP, Trivy baseline ve canlı veri kanıtı eksik olduğu için tek başına final raporu sayılmaz. Köşeli parantez içindeki alanları gerçek bulgular ve kanıtlarla tamamla. Çalıştırılmayan testleri başarılıymış gibi gösterme.
 
 ## 1. Yönetici özeti
 
-Kurye Çıkış Saati Planlayıcı, son teslim zamanından geriye doğru planlama yapan istemci taraflı bir web aracıdır. Kullanıcının verdiği hazırlık, yolculuk ve güven payını hesaplayarak hazırlık başlangıcı, en geç çıkış ve tahmini varış zamanlarını gösterir. Bu sürüm canlı trafik verisi çekmez ve sunucu tarafında sipariş saklamaz.
+Kurye Çıkış Saati Planlayıcı, son teslim zamanından geriye doğru planlama yapan istemci taraflı bir web aracıdır. Kullanıcının verdiği hazırlık, yolculuk ve güven payını hesaplayarak hazırlık başlangıcı, en geç çıkış ve tahmini varış zamanlarını gösterir. İBB şehir-geneli trafik indeksini GitHub Actions ile statik JSON dosyasına alacak veri hattı eklendi; ilk gerçek çekimin başarılı olduğu, bu rapor yazılırken Actions kanıtıyla ayrıca doğrulanmalıdır. Sunucu tarafında sipariş saklama yoktur.
 
-**Doğrulanan güvenlik sonucu:** [Sadece yapılan ve kanıtı bulunan kontrolleri yaz.]  
+**Doğrulanan güvenlik sonucu:** [Sadece yapılan ve kanıtı bulunan kontrolleri yaz.]
 **Açık riskler:** [Kalan gerçek riskleri yaz.]
 
 ## 2. Mimari ve güven sınırları
@@ -55,6 +55,8 @@ Sürümleri, `--ignore-unfixed` kullanılıp kullanılmadığını ve scan tarih
 GitHub Actions Gitleaks ve Trivy workflow'unun gerçek run linkini ekle. Branch protection, Dependabot ve secret scanning ayarlarının ekran görüntülerini ekle. Depoda gerçek API anahtarı bulunmadığını söylemek için yalnızca yaptığın taramayı ve kontrolü kullan.
 
 ## 8. İzleme, olay müdahalesi ve maliyet
+
+> Bulut hesabı ve yayını şu an kullanıcı talebiyle ertelendi. Bu nedenle canlı log, alarm ve bütçe alarmı sonuçları bu taslakta tamamlanmış olarak sunulamaz; öğretim elemanıyla onaylanan platform üzerinden daha sonra eklenmelidir.
 
 - Loglar: [gerçek Cloud Logging/servis çıktısı]
 - Alarm: [gerçek kural ve ekran görüntüsü]

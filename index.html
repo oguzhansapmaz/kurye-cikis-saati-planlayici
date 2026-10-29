@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="./styles.css">
   <script src="./app.js" defer></script>
   <script src="./map.js" defer></script>
+  <script src="./traffic-dashboard.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#planner">İçeriğe geç</a>
@@ -56,8 +57,9 @@
     </a>
     <nav class="main-nav" aria-label="Ana menü">
       <a class="nav-link active" href="#planner">Planlayıcı</a>
+      <a class="nav-link" href="#traffic-insights">Trafik analizi</a>
       <a class="nav-link" href="#how-it-works">Nasıl çalışır?</a>
-      <a class="nav-link" href="#izmir-map">İzmir</a>
+      <a class="nav-link" href="#istanbul-map">İstanbul</a>
       <a class="nav-link" href="./security.html">Güvenlik</a>
     </nav>
     <div class="topbar-meta"><span class="live-dot" aria-hidden="true"></span><span id="clock-label">Yerel saat</span></div>
@@ -92,43 +94,117 @@
       <div class="summary-stat"><span class="stat-label">Zaman payı</span><strong class="muted-strong">Sana göre</strong></div>
     </section>
 
+    <section id="traffic-insights" class="traffic-section shell" aria-labelledby="traffic-title">
+      <div class="section-heading traffic-heading">
+        <div>
+          <div class="section-kicker">İBB AÇIK VERİ · İSTANBUL</div>
+          <h2 id="traffic-title">Trafiğe göre daha bilinçli çıkış planı</h2>
+          <p>İstanbul için İBB şehir geneli trafik indeksini, geçmiş saatlerin örüntülerini ve seçtiğin çalışma gününü karşılaştır.</p>
+        </div>
+        <div class="traffic-source-meta">
+          <span id="traffic-update-label" class="traffic-update-label">Veri güncellemesi bekleniyor</span>
+          <a href="https://data.ibb.gov.tr/dataset/trafik-indeks-degeri-web-servisi" target="_blank" rel="noopener noreferrer">İBB veri kaynağı ↗</a>
+        </div>
+      </div>
 
-    <section id="izmir-map" class="map-section shell" aria-labelledby="map-title">
+      <div id="traffic-status" class="traffic-state traffic-state-loading" role="status" aria-live="polite">
+        <span class="traffic-spinner" aria-hidden="true"></span>
+        <div><strong>Trafik verisi yükleniyor</strong><p>Son başarılı İBB veri dosyası okunuyor.</p></div>
+      </div>
+      <div id="traffic-dashboard-content" hidden>
+        <div class="traffic-kpis" aria-label="Trafik özeti">
+          <article class="traffic-kpi"><span class="traffic-kpi-label">Son gözlenen indeks</span><strong id="traffic-current-value">—</strong><span id="traffic-current-level" class="traffic-kpi-foot">Veri bekleniyor</span></article>
+          <article class="traffic-kpi"><span class="traffic-kpi-label">Veri gözlem zamanı</span><strong id="traffic-current-time">—</strong><span id="traffic-current-age" class="traffic-kpi-foot">Son ölçüm zamanı</span></article>
+          <article class="traffic-kpi"><span class="traffic-kpi-label">Aynı gün/saat geçmiş ortalaması</span><strong id="traffic-delta-value">—</strong><span id="traffic-delta-label" class="traffic-kpi-foot">Karşılaştırma bekleniyor</span></article>
+        </div>
+
+        <div class="traffic-dashboard-grid">
+          <article class="traffic-panel traffic-panel-wide" aria-labelledby="traffic-trend-title">
+            <div class="traffic-panel-heading">
+              <div><div class="section-kicker">ANA GRAFİK</div><h3 id="traffic-trend-title">Trafik indeksinin zaman içindeki seyri</h3><p>İBB'nin yayımladığı şehir geneli indeks (0–100).</p></div>
+              <div class="traffic-range-controls" role="group" aria-label="Grafik dönemini seç">
+                <button type="button" data-traffic-range="24h" aria-pressed="false">24 sa</button>
+                <button type="button" data-traffic-range="7d" aria-pressed="true">7 gün</button>
+                <button type="button" data-traffic-range="28d" aria-pressed="false">28 gün</button>
+              </div>
+            </div>
+            <div class="traffic-chart-wrap"><svg id="traffic-trend-chart" class="traffic-line-chart" viewBox="0 0 720 260" role="img" aria-label="İBB trafik indeksinin zaman grafiği"><text x="360" y="130" text-anchor="middle">Veri yükleniyor</text></svg></div>
+            <p id="traffic-trend-summary" class="chart-summary">Grafik özeti veriler geldikten sonra oluşturulur.</p>
+            <button class="button button-quiet chart-table-toggle" type="button" data-show-table="traffic-observation-table" aria-expanded="false">Veriyi tablo olarak gör</button>
+          </article>
+
+          <article class="traffic-panel" aria-labelledby="traffic-recommend-title">
+            <div class="section-kicker">ÇIKIŞ SAATİ ÖNERİSİ</div>
+            <h3 id="traffic-recommend-title">Geçmişe göre daha sakin saat</h3>
+            <p class="traffic-panel-intro">İlçe çiftini seç; seçtiğin gün ve saat çevresindeki tarihsel indeksleri karşılaştıralım.</p>
+            <div class="traffic-form-grid">
+              <div class="field"><label for="route-origin">Çıkış ilçesi</label><select id="route-origin"><option>Kadıköy</option><option>Beşiktaş</option><option>Şişli</option><option>Üsküdar</option><option>Fatih</option><option>Bakırköy</option><option>Ataşehir</option><option>Maltepe</option></select></div>
+              <div class="field"><label for="route-destination">Varış ilçesi</label><select id="route-destination"><option>Beşiktaş</option><option>Kadıköy</option><option>Şişli</option><option>Üsküdar</option><option>Fatih</option><option>Bakırköy</option><option>Ataşehir</option><option>Maltepe</option></select></div>
+              <div class="field"><label for="recommend-weekday">Planlanan gün</label><select id="recommend-weekday"><option value="1">Pazartesi</option><option value="2">Salı</option><option value="3">Çarşamba</option><option value="4">Perşembe</option><option value="5">Cuma</option><option value="6">Cumartesi</option><option value="7">Pazar</option></select></div>
+              <div class="field"><label for="recommend-hour">Hedef saat</label><select id="recommend-hour"></select></div>
+            </div>
+            <button id="traffic-recommend-button" class="button button-primary button-full" type="button">Tarihsel saatleri karşılaştır</button>
+            <div id="traffic-recommendation-result" class="recommendation-result" role="status" aria-live="polite"><strong>Öneri için veri bekleniyor</strong><p>İlk veri çekiminden sonra tarihsel saatler karşılaştırılabilir.</p></div>
+            <p class="traffic-caveat">Önemli: Kaynak şehir genelinde tek indeks yayımlar; bu öneri ilçe çiftine özel rota ölçümü, navigasyon süresi veya canlı trafik garantisi değildir.</p>
+          </article>
+
+          <article class="traffic-panel traffic-panel-wide" aria-labelledby="traffic-heatmap-title">
+            <div class="traffic-panel-heading"><div><div class="section-kicker">İKİNCİ GRAFİK</div><h3 id="traffic-heatmap-title">Haftanın günü × saat ısı haritası</h3><p>Hücre rengi ilgili gün ve saatteki tarihsel ortalama indeksi temsil eder.</p></div><div class="heatmap-legend" aria-label="Düşükten yükseğe indeks"><span>Daha düşük</span><i class="heat-legend-low"></i><i class="heat-legend-mid"></i><i class="heat-legend-high"></i><span>Daha yüksek</span></div></div>
+            <div id="traffic-heatmap" class="traffic-heatmap" role="grid" aria-label="Haftanın günü ve saat bazında trafik indeksleri"><p class="empty-traffic-note">Isı haritası veriler geldikten sonra oluşturulur.</p></div>
+            <p id="traffic-heatmap-summary" class="chart-summary">Isı haritası özeti veriler geldikten sonra oluşturulur.</p>
+            <button class="button button-quiet chart-table-toggle" type="button" data-show-table="traffic-heatmap-table" aria-expanded="false">Isı haritası verisini tablo olarak gör</button>
+            <div id="traffic-heatmap-table" class="table-scroll traffic-access-table" hidden></div>
+          </article>
+
+          <article class="traffic-panel traffic-panel-wide" aria-labelledby="traffic-detail-title">
+            <div class="traffic-panel-heading"><div><div class="section-kicker">GÖZLEM TABLOSU</div><h3 id="traffic-detail-title">Son gözlemler</h3><p>Başlıklara tıklayarak sıralayabilirsin. Yalnızca İBB kaynağından alınan kayıtlar gösterilir.</p></div><span id="traffic-record-count" class="traffic-record-count">0 kayıt</span></div>
+            <div id="traffic-observation-table" class="table-scroll" hidden>
+              <table class="traffic-data-table"><caption class="visually-hidden">İBB trafik indeks gözlemleri</caption><thead><tr><th scope="col"><button type="button" data-sort-traffic="observedAt">Gözlem zamanı ↕</button></th><th scope="col"><button type="button" data-sort-traffic="index">Trafik indeksi ↕</button></th><th scope="col">Haftanın günü</th></tr></thead><tbody id="traffic-observation-rows"><tr><td colspan="3">Veri bekleniyor.</td></tr></tbody></table>
+            </div>
+            <p id="traffic-table-summary" class="chart-summary">Tablo, veri kaynağı başarıyla alındığında görüntülenir.</p>
+          </article>
+        </div>
+      </div>
+      <p class="traffic-attribution">Veri kaynağı: <a href="https://data.ibb.gov.tr/dataset/trafik-indeks-degeri-web-servisi" target="_blank" rel="noopener noreferrer">İBB Açık Veri Portalı — Trafik İndeks Değeri Web Servisi</a>. Tarihsel göstergedir; ilçe bazında trafik yoğunluğu veya geleceğe dönük tahmin olarak yorumlanmamalıdır. Harici kaynakta kesinti olursa son başarılı veri dosyası kullanılabilir.</p>
+    </section>
+
+
+    <section id="istanbul-map" class="map-section shell" aria-labelledby="map-title">
       <div class="section-heading map-heading">
         <div>
-          <div class="section-kicker">İLK BÖLGE · İZMİR</div>
-          <h2 id="map-title">Şehri haritada keşfet</h2>
-          <p>İzmir ve çevresine odaklan. Haritayı yakınlaştırabilir, kaydırabilir ve farklı teslimat bölgelerine geçebilirsin.</p>
+          <div class="section-kicker">VERİ KAYNAĞI · İSTANBUL</div>
+          <h2 id="map-title">İstanbul teslimat bölgelerini keşfet</h2>
+          <p>İBB trafik verisi İstanbul geneline aittir. Haritada ilçeleri seçerek çalışma bölgesini keşfet; harita tek başına yol veya trafik ölçümü değildir.</p>
         </div>
         <span class="map-status"><span class="map-status-dot"></span> Etkileşimli harita</span>
       </div>
       <div class="map-layout">
         <div class="map-card">
           <div class="map-toolbar" role="group" aria-label="Harita bölgesi seç">
-            <button class="map-focus-button active" type="button" data-map-focus="izmir">İzmir geneli</button>
-            <button class="map-focus-button" type="button" data-map-focus="konak">Konak</button>
-            <button class="map-focus-button" type="button" data-map-focus="karsiyaka">Karşıyaka</button>
-            <button class="map-focus-button" type="button" data-map-focus="bornova">Bornova</button>
-            <button class="map-focus-button" type="button" data-map-focus="buca">Buca</button>
-            <button class="map-focus-button" type="button" data-map-focus="urla">Urla</button>
+            <button class="map-focus-button active" type="button" data-map-focus="istanbul">İstanbul geneli</button>
+            <button class="map-focus-button" type="button" data-map-focus="kadikoy">Kadıköy</button>
+            <button class="map-focus-button" type="button" data-map-focus="besiktas">Beşiktaş</button>
+            <button class="map-focus-button" type="button" data-map-focus="sisli">Şişli</button>
+            <button class="map-focus-button" type="button" data-map-focus="uskudar">Üsküdar</button>
+            <button class="map-focus-button" type="button" data-map-focus="bakirkoy">Bakırköy</button>
           </div>
           <div class="map-frame-wrap">
-            <iframe id="izmir-map-frame" title="İzmir etkileşimli haritası" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=26.88%2C38.22%2C27.38%2C38.58&amp;layer=mapnik" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-            <div id="map-load-note" class="map-load-note" hidden>Harita yüklenemedi. İnternet bağlantını kontrol et veya <a href="https://www.openstreetmap.org/#map=11/38.4237/27.1428" target="_blank" rel="noopener noreferrer">OpenStreetMap'te aç</a>.</div>
+            <iframe id="istanbul-map-frame" title="İstanbul etkileşimli haritası" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=28.55%2C40.80%2C29.45%2C41.30&amp;layer=mapnik" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            <div id="map-load-note" class="map-load-note" hidden>Harita yüklenemedi. İnternet bağlantını kontrol et veya <a href="https://www.openstreetmap.org/#map=10/41.0082/28.9784" target="_blank" rel="noopener noreferrer">OpenStreetMap'te aç</a>.</div>
           </div>
           <div class="map-attribution">Harita verisi © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap katkıcıları</a></div>
         </div>
         <aside class="map-info-card">
           <div class="map-info-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 3.5 26 8v7.3c0 6.2-4.1 10.7-10 13.2C10.1 26 6 21.5 6 15.3V8z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m11.2 16.1 3.1 3.1 6.8-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
           <div class="section-kicker">ŞEFFAF PLANLAMA</div>
-          <h3 id="map-focus-title">İzmir geneli</h3>
-          <p id="map-focus-description">İzmir merkez ve çevresini incele. Bölgeler arasında geçiş yaparak planına uygun alanı keşfet.</p>
+          <h3 id="map-focus-title">İstanbul geneli</h3>
+          <p id="map-focus-description">İstanbul merkezini ve çevresini incele. İBB trafik indeksi şehir geneli göstergedir.</p>
           <div class="map-facts">
-            <div><span>Başlangıç bölgesi</span><strong>İzmir</strong></div>
-            <div><span>Canlı trafik verisi</span><strong class="map-fact-muted">Kullanılmıyor</strong></div>
+            <div><span>Veri bölgesi</span><strong>İstanbul</strong></div>
+            <div><span>Trafik göstergesi</span><strong>İBB endeksi</strong></div>
             <div><span>Kurye GPS takibi</span><strong class="map-fact-muted">Yok</strong></div>
           </div>
-          <p class="map-disclaimer">Bu harita konumları keşfetmek içindir. Gerçek zamanlı trafik veya canlı kurye konumu göstermez; yolculuk dakikasını planlama formunda sen belirlersin.</p>
+          <p class="map-disclaimer">Harita OpenStreetMap üzerinden bölgeyi gösterir; İBB trafik endeksi aşağıdaki analiz bölümünde yer alır. Endeks ilçe çifti veya belirli bir güzergâh için ölçüm değildir.</p>
         </aside>
       </div>
     </section>
@@ -155,7 +231,7 @@
             <div class="field"><label for="route-minutes">Yolculuk</label><div class="number-wrap"><input id="route-minutes" name="routeMinutes" type="number" min="1" max="600" step="1" value="35" required><span>dk</span></div></div>
             <div class="field"><label for="buffer-minutes">Güven payı</label><div class="number-wrap"><input id="buffer-minutes" name="bufferMinutes" type="number" min="0" max="180" step="1" value="15" required><span>dk</span></div></div>
           </div>
-          <div class="info-note"><span class="note-icon" aria-hidden="true">i</span><p><b>İpucu:</b> İzmir haritası bölgeleri keşfetmek içindir. Yolculuk dakikası manuel tahmindir; canlı trafik verisi kullanılmaz.</p></div>
+          <div class="info-note"><span class="note-icon" aria-hidden="true">i</span><p><b>İpucu:</b> Harita bölgeyi tanımak içindir. İBB trafik indeksi şehir geneli tarihsel göstergedir; güzergâha özel süre sağlamaz.</p></div>
           <div id="form-error" class="form-error" role="alert" hidden></div>
           <button class="button button-primary button-full" type="submit">Çıkış saatini hesapla <span aria-hidden="true">→</span></button>
         </form>
