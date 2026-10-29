@@ -55,7 +55,7 @@ jobs:
           curl --fail --silent http://127.0.0.1:8080/healthz | grep -q '^ok'
           curl --fail --silent http://127.0.0.1:8080/ | grep -q 'Kurye Çıkış Saati Planlayıcı'
       - name: Scan image with Trivy; CRITICAL stops the pipeline
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: kurye-planlayici:${{ github.sha }}
           format: table
@@ -65,7 +65,7 @@ jobs:
           severity: CRITICAL
       - name: Save full Trivy report
         if: always()
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: kurye-planlayici:${{ github.sha }}
           format: json
