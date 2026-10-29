@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Kurye çıkış saatini; hazırlık, tahmini yolculuk süresi ve güvenlik payıyla planlayın.">
+  <meta name="theme-color" content="#ffffff">
+  <title>Kurye Planlayıcı — Doğru çıkış, zamanında teslimat</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+  <script src="./map.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#planner">İçeriğe geç</a>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Kurye Planlayıcı ana sayfa">
+      <span class="brand-mark brand-mark-animated" aria-hidden="true">
+        <svg class="courier-rider-logo" viewBox="0 0 74 42" focusable="false" aria-hidden="true">
+  <path class="road-dash" d="M2 39H72" fill="none" stroke="#b9c5ff" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 5"/>
+  <!-- Scooter frame is drawn first so the wheels sit naturally over the axles. -->
+  <path d="M18 31L27 26.5L34 26.5L38 28H46L54 31" fill="none" stroke="#5264f2" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M26 25.8L28 22.8H36L39 26.5L31 27Z" fill="#263354"/>
+  <path d="M28 22.7H36" stroke="#263354" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M44.5 22L47 18L50 19L50 24L53 30L49.5 30L46 25Z" fill="#5264f2" stroke="#3448d6" stroke-width=".6" stroke-linejoin="round"/>
+  <path d="M47 18H53" stroke="#263354" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="49.2" cy="22.1" r="1.35" fill="#ffcc72"/>
+  <!-- Wheel mounts stay fixed; only the spokes rotate around each wheel's own center. -->
+  <g class="wheel-mount" transform="translate(18 31)">
+    <circle r="5.1" fill="#263354"/><circle r="3.45" fill="#fff"/>
+    <g class="courier-wheel-spin" stroke="#5264f2" stroke-width="1.05" stroke-linecap="round"><path d="M-2.2 0H2.2M0 -2.2V2.2"/></g>
+  </g>
+  <g class="wheel-mount" transform="translate(54 31)">
+    <circle r="5.1" fill="#263354"/><circle r="3.45" fill="#fff"/>
+    <g class="courier-wheel-spin" stroke="#5264f2" stroke-width="1.05" stroke-linecap="round"><path d="M-2.2 0H2.2M0 -2.2V2.2"/></g>
+  </g>
+  <!-- Delivery bag behind the rider. -->
+  <path d="M24 15L30 13.6L33 18.2L30.5 23L25 22.5Z" fill="#ffb76e" stroke="#fff" stroke-width="1.1" stroke-linejoin="round"/>
+  <path d="M25.5 17L30.2 16" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+  <g class="courier-rider-body">
+    <!-- Rider's legs rest on the scooter floorboard. -->
+    <path d="M34 18.7L38.2 23.6L44.2 26.5" fill="none" stroke="#263354" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M32.5 19.2L29.2 24.8L34.2 26.6" fill="none" stroke="#263354" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Torso leaning forward, hands reaching the handlebars. -->
+    <path d="M34.7 12.3C37 10.9 40.4 12 42.4 14.5L45 18.2L41.7 20L37.9 17.5L34 21.2L30.7 19.6L32.1 15.4Z" fill="#5264f2"/>
+    <path d="M38.5 14.7L43 15.4L47.3 17.7" fill="none" stroke="#263354" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M40 16.8L45 18.4L47.3 17.7" fill="none" stroke="#f1bd8e" stroke-width="2.1" stroke-linecap="round"/>
+    <circle cx="37.4" cy="7.4" r="4.5" fill="#f1bd8e"/>
+    <path d="M32.9 7.6C32.3 3.5 35.6 1.3 39 2.5C41.5 3.2 42.7 5 42.1 7.3L39.1 7L37.2 4.2L33.5 8Z" fill="#263354"/>
+    <path d="M39.8 7.4L43 8.1" stroke="#263354" stroke-width="1.6" stroke-linecap="round"/>
+  </g>
+</svg>
+      </span>
+      <span class="brand-name">kurye<span>plan</span></span>
+    </a>
+    <nav class="main-nav" aria-label="Ana menü">
+      <a class="nav-link active" href="#planner">Planlayıcı</a>
+      <a class="nav-link" href="#how-it-works">Nasıl çalışır?</a>
+      <a class="nav-link" href="#izmir-map">İzmir</a>
+      <a class="nav-link" href="./security.html">Güvenlik</a>
+    </nav>
+    <div class="topbar-meta"><span class="live-dot" aria-hidden="true"></span><span id="clock-label">Yerel saat</span></div>
+  </header>
+
+  <main id="top">
+    <section class="hero shell" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="eyebrow-icon" aria-hidden="true">↗</span> Günlük teslimat planlama</div>
+        <h1 id="hero-title">Doğru çıkış.<br><span>Zamanında teslimat.</span></h1>
+        <p class="hero-lede">Son teslim saatini; hazırlık, tahmini yolculuk ve güvenlik payıyla birleştir. Kurye ne zaman çıkmalı, hazırlık ne zaman başlamalı — tek ekranda gör.</p>
+        <div class="hero-points">
+          <span><span class="check-mark" aria-hidden="true">✓</span> Hızlı planlama</span>
+          <span><span class="check-mark" aria-hidden="true">✓</span> Hazırlık ve yol süresi</span>
+          <span><span class="check-mark" aria-hidden="true">✓</span> Esnek zaman payı</span>
+        </div>
+      </div>
+      <div class="hero-visual" aria-label="Zamanlama mantığı illüstrasyonu">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="route-line"><span class="route-point point-start"></span><span class="route-dash"></span><span class="route-point point-end"></span></div>
+        <div class="float-card float-card-top"><span class="float-icon purple">◷</span><span><b>Hazırlık</b><small>Önceden başla</small></span></div>
+        <div class="hero-clock"><div class="clock-face"><span class="clock-hand hand-hour"></span><span class="clock-hand hand-minute"></span><span class="clock-center"></span></div><span class="clock-caption">Zaman tamponu</span></div>
+        <div class="float-card float-card-bottom"><span class="float-icon green">✓</span><span><b>Plan hazır</b><small>Çıkış saatini gör</small></span></div>
+        <div class="hero-spark spark-a">✦</div><div class="hero-spark spark-b">✧</div>
+      </div>
+    </section>
+
+    <section class="summary-strip shell" aria-label="Planlama özeti">
+      <div class="summary-lead"><span class="summary-icon">◷</span><span><b>Planını oluştur</b><small>Son teslim saatinden geriye doğru hesapla.</small></span></div>
+      <div class="summary-stat"><span class="stat-label">Hesaplama</span><strong>Anında</strong></div>
+      <div class="summary-stat"><span class="stat-label">Plan içeriği</span><strong>Hazırlık + yol</strong></div>
+      <div class="summary-stat"><span class="stat-label">Zaman payı</span><strong class="muted-strong">Sana göre</strong></div>
+    </section>
+
+
+    <section id="izmir-map" class="map-section shell" aria-labelledby="map-title">
+      <div class="section-heading map-heading">
+        <div>
+          <div class="section-kicker">İLK BÖLGE · İZMİR</div>
+          <h2 id="map-title">Şehri haritada keşfet</h2>
+          <p>İzmir ve çevresine odaklan. Haritayı yakınlaştırabilir, kaydırabilir ve farklı teslimat bölgelerine geçebilirsin.</p>
+        </div>
+        <span class="map-status"><span class="map-status-dot"></span> Etkileşimli harita</span>
+      </div>
+      <div class="map-layout">
+        <div class="map-card">
+          <div class="map-toolbar" role="group" aria-label="Harita bölgesi seç">
+            <button class="map-focus-button active" type="button" data-map-focus="izmir">İzmir geneli</button>
+            <button class="map-focus-button" type="button" data-map-focus="konak">Konak</button>
+            <button class="map-focus-button" type="button" data-map-focus="karsiyaka">Karşıyaka</button>
+            <button class="map-focus-button" type="button" data-map-focus="bornova">Bornova</button>
+            <button class="map-focus-button" type="button" data-map-focus="buca">Buca</button>
+            <button class="map-focus-button" type="button" data-map-focus="urla">Urla</button>
+          </div>
+          <div class="map-frame-wrap">
+            <iframe id="izmir-map-frame" title="İzmir etkileşimli haritası" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=26.88%2C38.22%2C27.38%2C38.58&amp;layer=mapnik" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            <div id="map-load-note" class="map-load-note" hidden>Harita yüklenemedi. İnternet bağlantını kontrol et veya <a href="https://www.openstreetmap.org/#map=11/38.4237/27.1428" target="_blank" rel="noopener noreferrer">OpenStreetMap'te aç</a>.</div>
+          </div>
+          <div class="map-attribution">Harita verisi © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap katkıcıları</a></div>
+        </div>
+        <aside class="map-info-card">
+          <div class="map-info-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 3.5 26 8v7.3c0 6.2-4.1 10.7-10 13.2C10.1 26 6 21.5 6 15.3V8z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m11.2 16.1 3.1 3.1 6.8-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="section-kicker">ŞEFFAF PLANLAMA</div>
+          <h3 id="map-focus-title">İzmir geneli</h3>
+          <p id="map-focus-description">İzmir merkez ve çevresini incele. Bölgeler arasında geçiş yaparak planına uygun alanı keşfet.</p>
+          <div class="map-facts">
+            <div><span>Başlangıç bölgesi</span><strong>İzmir</strong></div>
+            <div><span>Canlı trafik verisi</span><strong class="map-fact-muted">Kullanılmıyor</strong></div>
+            <div><span>Kurye GPS takibi</span><strong class="map-fact-muted">Yok</strong></div>
+          </div>
+          <p class="map-disclaimer">Bu harita konumları keşfetmek içindir. Gerçek zamanlı trafik veya canlı kurye konumu göstermez; yolculuk dakikasını planlama formunda sen belirlersin.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="planner" class="planner-section shell" aria-labelledby="planner-title">
+      <div class="section-heading">
+        <div><div class="section-kicker">PLANLAMA MASASI</div><h2 id="planner-title">Yeni teslimat planı</h2><p>Bilgileri gir; en geç çıkış ve hazırlık saatini hesaplayalım.</p></div>
+        <button id="reset-button" class="button button-quiet" type="button"><span aria-hidden="true">↺</span> Örnek değerlere dön</button>
+      </div>
+
+      <div class="planner-grid">
+        <form id="planner-form" class="planner-card" novalidate>
+          <div class="card-heading"><span class="step-badge">01</span><div><h3>Teslimat bilgileri</h3><p>İşi tanımlayan temel bilgiler</p></div></div>
+          <div class="form-grid">
+            <div class="field"><label for="order-id">Sipariş / iş no <span class="optional">(isteğe bağlı)</span></label><input id="order-id" name="orderId" type="text" maxlength="40" placeholder="Örn. KRY-2048" autocomplete="off"></div>
+            <div class="field"><label for="courier-name">Kurye adı / kodu</label><input id="courier-name" name="courierName" type="text" maxlength="60" placeholder="Örn. Kurye 01" autocomplete="off" required></div>
+            <div class="field field-wide"><label for="destination">Teslimat bölgesi</label><div class="input-with-icon"><span aria-hidden="true">⌖</span><input id="destination" name="destination" type="text" maxlength="100" placeholder="Örn. Kadıköy / Moda" autocomplete="off" required></div></div>
+            <div class="field field-wide"><label for="deadline">Son teslim zamanı</label><input id="deadline" name="deadline" type="datetime-local" required></div>
+          </div>
+          <div class="form-divider"></div>
+          <div class="card-heading"><span class="step-badge step-badge-soft">02</span><div><h3>Süre tahminleri</h3><p>Yol ve operasyon için dakika gir</p></div></div>
+          <div class="form-grid three-cols">
+            <div class="field"><label for="prep-minutes">Hazırlık</label><div class="number-wrap"><input id="prep-minutes" name="prepMinutes" type="number" min="0" max="360" step="1" value="10" required><span>dk</span></div></div>
+            <div class="field"><label for="route-minutes">Yolculuk</label><div class="number-wrap"><input id="route-minutes" name="routeMinutes" type="number" min="1" max="600" step="1" value="35" required><span>dk</span></div></div>
+            <div class="field"><label for="buffer-minutes">Güven payı</label><div class="number-wrap"><input id="buffer-minutes" name="bufferMinutes" type="number" min="0" max="180" step="1" value="15" required><span>dk</span></div></div>
+          </div>
+          <div class="info-note"><span class="note-icon" aria-hidden="true">i</span><p><b>İpucu:</b> İzmir haritası bölgeleri keşfetmek içindir. Yolculuk dakikası manuel tahmindir; canlı trafik verisi kullanılmaz.</p></div>
+          <div id="form-error" class="form-error" role="alert" hidden></div>
+          <button class="button button-primary button-full" type="submit">Çıkış saatini hesapla <span aria-hidden="true">→</span></button>
+        </form>
+
+        <aside class="results-column" aria-label="Hesaplama sonucu" aria-live="polite">
+          <div class="result-card">
+            <div class="result-topline"><span class="result-label">ÖNERİLEN PLAN</span><span id="status-pill" class="status-pill status-ready"><span class="status-dot"></span><span id="status-text">Planlanabilir</span></span></div>
+            <div class="result-main"><span class="result-overline">Kurye en geç bu saatte çıkmalı</span><div class="result-time" id="exit-time">--:--</div><div id="exit-date" class="result-date">Tarih hesaplanıyor</div></div>
+            <div class="result-countdown"><span class="countdown-symbol" aria-hidden="true">◷</span><div><small>Çıkışa kalan süre</small><strong id="time-left">Hesaplanıyor…</strong></div><div class="countdown-right" id="exit-distance">—</div></div>
+            <div class="result-timeline"><div class="timeline-line"></div><div class="timeline-item"><span class="timeline-dot dot-purple"></span><div><small>Hazırlık başlangıcı</small><strong id="prep-time">--:--</strong></div><span id="prep-date" class="timeline-date">—</span></div><div class="timeline-item"><span class="timeline-dot dot-blue"></span><div><small>Kurye çıkışı</small><strong id="timeline-exit-time">--:--</strong></div><span id="timeline-exit-date" class="timeline-date">—</span></div><div class="timeline-item"><span class="timeline-dot dot-green"></span><div><small>Tahmini varış</small><strong id="arrival-time">--:--</strong></div><span id="arrival-date" class="timeline-date">—</span></div></div>
+            <div id="result-warning" class="result-warning" hidden></div>
+            <div class="result-actions"><button class="button button-light" id="save-plan" type="button"><span aria-hidden="true">＋</span> Planı kaydet</button><button class="icon-button" id="export-plan" type="button" aria-label="Planı CSV olarak indir" title="CSV indir">⇩</button></div>
+          </div>
+          <div class="metric-row"><div class="metric-card"><span class="metric-icon metric-purple">◷</span><span class="metric-title">Toplam operasyon</span><strong id="total-duration">60 dk</strong><small>Hazırlık + yol + pay</small></div><div class="metric-card"><span class="metric-icon metric-green">✓</span><span class="metric-title">Güven payı</span><strong id="buffer-display">15 dk</strong><small>Beklenmeyen gecikmeler için</small></div></div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="saved" class="saved-section shell" aria-labelledby="saved-title">
+      <div class="section-heading saved-heading"><div><div class="section-kicker">BU CİHAZDA</div><h2 id="saved-title">Kaydedilen planlar <span id="saved-count" class="count-badge">0</span></h2><p>Kaydedilen planlar yalnızca bu tarayıcıda tutulur.</p></div><button id="clear-plans" class="button button-quiet" type="button" disabled>Hepsini temizle</button></div>
+      <div id="saved-plans" class="saved-list"><div class="empty-state"><div class="empty-icon" aria-hidden="true">▤</div><b>Henüz kaydedilmiş plan yok</b><p>İlk hesaplamanı yaptıktan sonra “Planı kaydet” butonuna bas.</p></div></div>
+    </section>
+
+    <section id="how-it-works" class="how-section shell" aria-labelledby="how-title">
+      <div class="section-heading"><div><div class="section-kicker">BASİT VE AÇIK</div><h2 id="how-title">Hesaplama nasıl yapılır?</h2><p>Planlama kararları görünür ve takip edilebilir olmalı.</p></div></div>
+      <div class="how-grid"><article class="how-card"><span class="how-number">01</span><div class="how-icon icon-lilac">⌑</div><h3>Son teslim zamanını gir</h3><p>Siparişin müşteriye ulaşmış olması gereken tarihi ve saati seç.</p></article><article class="how-card"><span class="how-number">02</span><div class="how-icon icon-blue">◷</div><h3>Süreleri tahmin et</h3><p>Hazırlık, yolculuk ve aksilikler için bırakmak istediğin güven payını belirle.</p></article><article class="how-card"><span class="how-number">03</span><div class="how-icon icon-green">↗</div><h3>Geriye doğru planla</h3><p>Son teslimden yol süresi ve güven payı çıkarılır; hazırlık bu çıkış saatinden önce başlar.</p></article></div>
+      <div class="formula-card"><span class="formula-label">FORMÜL</span><p><b>En geç çıkış</b> = Son teslim zamanı − Tahmini yolculuk − Güven payı</p><p><b>Hazırlık başlangıcı</b> = En geç çıkış − Hazırlık süresi</p></div>
+    </section>
+
+
+  </main>
+
+  <footer class="footer shell"><a class="brand footer-brand" href="#top"><span class="brand-mark brand-mark-animated" aria-hidden="true"><svg class="courier-rider-logo" viewBox="0 0 74 42" focusable="false" aria-hidden="true">
+  <path class="road-dash" d="M2 39H72" fill="none" stroke="#b9c5ff" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 5"/>
+  <!-- Scooter frame is drawn first so the wheels sit naturally over the axles. -->
+  <path d="M18 31L27 26.5L34 26.5L38 28H46L54 31" fill="none" stroke="#5264f2" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M26 25.8L28 22.8H36L39 26.5L31 27Z" fill="#263354"/>
+  <path d="M28 22.7H36" stroke="#263354" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M44.5 22L47 18L50 19L50 24L53 30L49.5 30L46 25Z" fill="#5264f2" stroke="#3448d6" stroke-width=".6" stroke-linejoin="round"/>
+  <path d="M47 18H53" stroke="#263354" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="49.2" cy="22.1" r="1.35" fill="#ffcc72"/>
+  <!-- Wheel mounts stay fixed; only the spokes rotate around each wheel's own center. -->
+  <g class="wheel-mount" transform="translate(18 31)">
+    <circle r="5.1" fill="#263354"/><circle r="3.45" fill="#fff"/>
+    <g class="courier-wheel-spin" stroke="#5264f2" stroke-width="1.05" stroke-linecap="round"><path d="M-2.2 0H2.2M0 -2.2V2.2"/></g>
+  </g>
+  <g class="wheel-mount" transform="translate(54 31)">
+    <circle r="5.1" fill="#263354"/><circle r="3.45" fill="#fff"/>
+    <g class="courier-wheel-spin" stroke="#5264f2" stroke-width="1.05" stroke-linecap="round"><path d="M-2.2 0H2.2M0 -2.2V2.2"/></g>
+  </g>
+  <!-- Delivery bag behind the rider. -->
+  <path d="M24 15L30 13.6L33 18.2L30.5 23L25 22.5Z" fill="#ffb76e" stroke="#fff" stroke-width="1.1" stroke-linejoin="round"/>
+  <path d="M25.5 17L30.2 16" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+  <g class="courier-rider-body">
+    <!-- Rider's legs rest on the scooter floorboard. -->
+    <path d="M34 18.7L38.2 23.6L44.2 26.5" fill="none" stroke="#263354" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M32.5 19.2L29.2 24.8L34.2 26.6" fill="none" stroke="#263354" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Torso leaning forward, hands reaching the handlebars. -->
+    <path d="M34.7 12.3C37 10.9 40.4 12 42.4 14.5L45 18.2L41.7 20L37.9 17.5L34 21.2L30.7 19.6L32.1 15.4Z" fill="#5264f2"/>
+    <path d="M38.5 14.7L43 15.4L47.3 17.7" fill="none" stroke="#263354" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M40 16.8L45 18.4L47.3 17.7" fill="none" stroke="#f1bd8e" stroke-width="2.1" stroke-linecap="round"/>
+    <circle cx="37.4" cy="7.4" r="4.5" fill="#f1bd8e"/>
+    <path d="M32.9 7.6C32.3 3.5 35.6 1.3 39 2.5C41.5 3.2 42.7 5 42.1 7.3L39.1 7L37.2 4.2L33.5 8Z" fill="#263354"/>
+    <path d="M39.8 7.4L43 8.1" stroke="#263354" stroke-width="1.6" stroke-linecap="round"/>
+  </g>
+</svg></span><span class="brand-name">kurye<span>plan</span></span></a><p>Kurye çıkışını tahmin değil, plan hâline getir.</p><div class="footer-meta"><span>Kurye Çıkış Saati Planlayıcı</span><a href="./security.html">Güvenlik ve iletişim</a></div></footer>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

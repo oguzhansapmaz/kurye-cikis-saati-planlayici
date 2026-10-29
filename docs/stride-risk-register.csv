@@ -1,0 +1,13 @@
+ID,STRIDE kategorisi,Tehdit,Önlem,Olabilirlik (1-5),Etki (1-5),Başlangıç riski,Kalan risk,Kanıt/Durum
+S1,Spoofing,CI iş akışını çalıştıran yetkinin kötüye kullanılması,Actions permissions en az yetki; branş koruması ve inceleme,2,5,10,Orta,Branch protection depo ayarında manuel açılmalı
+S2,Tampering,Kaynak kod veya Dockerfile'a kötü amaçlı değişiklik eklenmesi,Pull request incelemesi; secret scan ve Trivy CI,3,5,15,Orta,GitHub Actions çalışması/branch protection kanıtı gerekli
+S3,Repudiation,Planlama kararlarının olay kaydının olmaması,Demo sürümünde açık yöntem notu; prod sürümde merkezi log/izleme,3,3,9,Orta,Merkezi uygulama logu henüz yok
+S4,Information Disclosure,Gerçek kurye/sipariş bilgilerinin herkese açık depoya veya tarayıcıya eklenmesi,Gerçek veri kullanmama; kayıtların localStorage'da olduğunu kullanıcıya açıklama; Gitleaks,3,4,12,Orta,Veri işleme politikası / kullanıcı kabulü yok
+S5,Denial of Service,Çok sayıda istekle statik servisin kaynaklarının tüketilmesi,Cloud Run max instances ve düşük kaynak limitleri; sağlayıcı izleme/bütçe alarmı,2,4,8,Düşük-Orta,Limitlerin gerçek serviste doğrulanması gerekli
+S6,Elevation of Privilege,Container sürecinin root yetkisiyle çalışması,Runtime `USER 101:101`; Docker inspect ve id çıktısı; cap_drop ALL,3,5,15,Düşük,Gerçek Docker doğrulaması gerekli
+S7,Elevation of Privilege,Container içindeki zafiyetin host/servis üzerinde etkili olması,Unprivileged base image; read-only filesystem; no-new-privileges; capability drop,2,5,10,Orta,Local readonly testi ve CI sonucu gerekli
+S8,Tampering,Eski veya zafiyetli taban imajın production'a geçmesi,Trivy image taraması; CRITICAL seviyesinde başarısız CI,4,5,20,Orta,Trivy önce/sonra JSON sonuçları gerekli
+S9,Information Disclosure,HTTP üzerinden verinin taşınması veya güvenlik başlıklarının olmaması,HTTPS; HSTS, CSP, nosniff, Referrer-Policy, Permissions-Policy,3,4,12,Orta,Canlı URL başlık taraması gerekli
+S10,Denial of Service / Tampering,Kullanıcı hatalı veya aşırı değer girerek yanlış plan oluşturması,Aralık doğrulaması; kullanıcı tarafından girilen tahmin olduğunu açıkça belirtme,3,3,9,Düşük,Temel form kontrolleri kodda var; tarayıcı testleri gerekli
+S11,Information Disclosure,CI loglarında yanlışlıkla secret yazılması,Secret'ları repoya koymama; Gitleaks; loglara değişkenleri yazdırmama,2,5,10,Orta,CI çalıştırma ve secret scanning sonucu gerekli
+S12,Repudiation,Gerçek güvenlik testlerinin yapılmadığı hâlde raporda başarılı gösterilmesi,Kanıt sicili; tarihli gerçek tarama çıktıları; tamamlanmayan durumları açık yazma,3,4,12,Düşük,Ödev raporu yazılmadan kanıtlar eklenmeli

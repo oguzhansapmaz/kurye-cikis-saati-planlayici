@@ -1,0 +1,3 @@
+project_id = "replace-with-your-google-cloud-project-id"
+region     = "europe-west1"
+image      = "europe-west1-docker.pkg.dev/replace-project/kurye-images/kurye-planlayici:1.0"

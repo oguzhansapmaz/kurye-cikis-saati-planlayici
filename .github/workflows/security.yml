@@ -1,0 +1,151 @@
+name: Security gate and Cloud Run release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secret_scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan repository for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build_and_scan:
+    name: Build → non-root/readonly tests → Trivy gate
+    runs-on: ubuntu-latest
+    needs: [secret_scan]
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Build hardened image
+        run: docker build --pull -t kurye-planlayici:${{ github.sha }} .
+      - name: Verify image declares non-root user
+        shell: bash
+        run: |
+          actual="$(docker image inspect kurye-planlayici:${{ github.sha }} --format '{{.Config.User}}')"
+          echo "Configured runtime user: ${actual}"
+          test "${actual}" = "101:101"
+      - name: Run read-only runtime smoke test
+        shell: bash
+        run: |
+          docker run -d --name kurye-smoke --read-only \
+            --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+            --security-opt no-new-privileges --cap-drop ALL \
+            -p 127.0.0.1:8080:8080 kurye-planlayici:${{ github.sha }}
+          trap 'docker rm -f kurye-smoke >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:8080/healthz; then break; fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:8080/healthz | grep -q '^ok'
+          curl --fail --silent http://127.0.0.1:8080/ | grep -q 'Kurye Çıkış Saati Planlayıcı'
+      - name: Scan image with Trivy; CRITICAL stops the pipeline
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: kurye-planlayici:${{ github.sha }}
+          format: table
+          exit-code: '1'
+          ignore-unfixed: false
+          vuln-type: os,library
+          severity: CRITICAL
+      - name: Save full Trivy report
+        if: always()
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: kurye-planlayici:${{ github.sha }}
+          format: json
+          output: trivy-after.json
+          exit-code: '0'
+          ignore-unfixed: false
+          vuln-type: os,library
+          severity: CRITICAL,HIGH,MEDIUM,LOW
+      - name: Save the exact scanned image for gated deployment
+        if: success()
+        run: docker save kurye-planlayici:${{ github.sha }} -o kurye-image.tar
+      - name: Upload scan report and exact image artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scanned-release-${{ github.sha }}
+          path: |
+            trivy-after.json
+            kurye-image.tar
+          if-no-files-found: warn
+          retention-days: 14
+
+  deploy_cloud_run:
+    name: Deploy the already-scanned image
+    runs-on: ubuntu-latest
+    needs: [secret_scan, build_and_scan]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      AR_REPOSITORY: ${{ vars.AR_REPOSITORY }}
+      IMAGE_NAME: kurye-planlayici
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Validate Cloud Run configuration
+        env:
+          WIF_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          DEPLOYER_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+        shell: bash
+        run: |
+          test -n "$GCP_PROJECT_ID" || { echo "Missing GitHub repository variable GCP_PROJECT_ID"; exit 1; }
+          test -n "$GCP_REGION" || { echo "Missing GitHub repository variable GCP_REGION"; exit 1; }
+          test -n "$AR_REPOSITORY" || { echo "Missing GitHub repository variable AR_REPOSITORY"; exit 1; }
+          test -n "$WIF_PROVIDER" || { echo "Missing GCP_WORKLOAD_IDENTITY_PROVIDER secret"; exit 1; }
+          test -n "$DEPLOYER_SERVICE_ACCOUNT" || { echo "Missing GCP_SERVICE_ACCOUNT secret"; exit 1; }
+      - name: Download the exact image and Trivy report that passed CI
+        uses: actions/download-artifact@v4
+        with:
+          name: scanned-release-${{ github.sha }}
+          path: release-artifact
+      - name: Load scanned image
+        run: docker load -i release-artifact/kurye-image.tar
+      - name: Authenticate to Google Cloud with Workload Identity Federation
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Configure Artifact Registry auth
+        run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+      - name: Push exact scanned image (only after successful Trivy gate)
+        id: push
+        shell: bash
+        run: |
+          IMAGE_URI="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${AR_REPOSITORY}/${IMAGE_NAME}:${GITHUB_SHA}"
+          docker tag "kurye-planlayici:${GITHUB_SHA}" "$IMAGE_URI"
+          docker push "$IMAGE_URI"
+          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+      - name: Deploy image to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: kurye-planlayici
+          region: ${{ env.GCP_REGION }}
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          image: ${{ steps.push.outputs.image_uri }}
+          flags: '--port=8080 --cpu=1 --memory=256Mi --min=0 --max=1 --allow-unauthenticated --service-account=kurye-planner-runtime@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com'
