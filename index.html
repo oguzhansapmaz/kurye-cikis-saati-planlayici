@@ -8,7 +8,9 @@
   <meta name="theme-color" content="#ffffff">
   <title>Kurye Planlayıcı — Doğru çıkış, zamanında teslimat</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <link rel="stylesheet" href="./styles.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
   <script src="./app.js" defer></script>
   <script src="./map.js" defer></script>
   <script src="./traffic-dashboard.js" defer></script>
@@ -172,9 +174,9 @@
     <section id="istanbul-map" class="map-section shell" aria-labelledby="map-title">
       <div class="section-heading map-heading">
         <div>
-          <div class="section-kicker">VERİ KAYNAĞI · İSTANBUL</div>
-          <h2 id="map-title">İstanbul teslimat bölgelerini keşfet</h2>
-          <p>İBB trafik verisi İstanbul geneline aittir. Haritada ilçeleri seçerek çalışma bölgesini keşfet; harita tek başına yol veya trafik ölçümü değildir.</p>
+          <div class="section-kicker">CANLI TRAFİK KATMANI · İSTANBUL</div>
+          <h2 id="map-title">İstanbul canlı trafik haritası</h2>
+          <p>TomTom trafik akışı renkleri, seçtiğin bölgede yol hızının serbest akışa göre durumunu gösterir. Bölge seçimi haritanın görünümünü değiştirir.</p>
         </div>
         <span class="map-status"><span class="map-status-dot"></span> Etkileşimli harita</span>
       </div>
@@ -189,10 +191,15 @@
             <button class="map-focus-button" type="button" data-map-focus="bakirkoy">Bakırköy</button>
           </div>
           <div class="map-frame-wrap">
-            <iframe id="istanbul-map-frame" title="İstanbul etkileşimli haritası" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=28.55%2C40.80%2C29.45%2C41.30&amp;layer=mapnik" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            <div id="istanbul-map-canvas" role="region" aria-label="İstanbul etkileşimli haritası; haritayı sürükleyebilir ve yakınlaştırabilirsin."></div>
             <div id="map-load-note" class="map-load-note" hidden>Harita yüklenemedi. İnternet bağlantını kontrol et veya <a href="https://www.openstreetmap.org/#map=10/41.0082/28.9784" target="_blank" rel="noopener noreferrer">OpenStreetMap'te aç</a>.</div>
           </div>
-          <div class="map-attribution">Harita verisi © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap katkıcıları</a></div>
+          <div id="map-layer-status" class="map-layer-status" data-state="checking" role="status" aria-live="polite">
+            <span class="map-layer-status-dot" aria-hidden="true"></span>
+            <span id="map-layer-status-text">Canlı trafik katmanı kontrol ediliyor…</span>
+            <span id="map-traffic-legend" class="traffic-map-legend" hidden><i class="traffic-legend-smooth" aria-hidden="true"></i> Akıcı <i class="traffic-legend-medium" aria-hidden="true"></i> Orta <i class="traffic-legend-heavy" aria-hidden="true"></i> Yoğun</span>
+          </div>
+          <div class="map-attribution">Harita © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap katkıcıları</a> · Trafik akışı © <a href="https://www.tomtom.com/" target="_blank" rel="noopener noreferrer">TomTom</a>. Trafik renkleri bağıl yol hızını gösterir; kurye GPS'i veya güzergâh ETA'sı değildir.</div>
         </div>
         <aside class="map-info-card">
           <div class="map-info-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 3.5 26 8v7.3c0 6.2-4.1 10.7-10 13.2C10.1 26 6 21.5 6 15.3V8z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m11.2 16.1 3.1 3.1 6.8-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
@@ -204,7 +211,7 @@
             <div><span>Trafik göstergesi</span><strong>İBB endeksi</strong></div>
             <div><span>Kurye GPS takibi</span><strong class="map-fact-muted">Yok</strong></div>
           </div>
-          <p class="map-disclaimer">Harita OpenStreetMap üzerinden bölgeyi gösterir; İBB trafik endeksi aşağıdaki analiz bölümünde yer alır. Endeks ilçe çifti veya belirli bir güzergâh için ölçüm değildir.</p>
+          <p class="map-disclaimer">Temel harita OpenStreetMap, renkli canlı trafik katmanı TomTom verisini kullanır. Trafik katmanı etkin değilse Vercel ortam değişkeni ve TomTom ürün yetkisi kontrol edilmelidir. İBB tarihsel indeksi aşağıdaki analiz bölümünde ayrı gösterilir.</p>
         </aside>
       </div>
     </section>

@@ -9,7 +9,7 @@ Kuryeplan, İstanbul'da çalışan küçük bir kurye işletmesinin operasyon so
 - Türkçe, duyarlı web arayüzü; tablet ve masaüstünde büyük dokunma hedefleri.
 - Teslimat zamanı, hazırlık, kullanıcı tahmini yol süresi ve güven payına göre çıkış/başlangıç hesaplaması.
 - Tarayıcıda plan kaydı ve CSV dışa aktarma.
-- İstanbul haritası: bölgeyi tanımak için OpenStreetMap iframe'i; bu harita canlı trafik veya kurye konumu değildir.
+- İstanbul haritası: Leaflet + OpenStreetMap taban haritası ve Vercel sunucu fonksiyonu üzerinden TomTom canlı trafik akış karoları. TomTom anahtarı yalnızca Vercel ortam değişkeninde tutulur; NGINX/Docker statik dağıtımında proxy ayrıca kurulmadıkça canlı katman kapalı kalır.
 - İBB şehir geneli trafik indeksinden zaman serisi, haftanın günü × saat ısı haritası, aynı gün/saat geçmiş karşılaştırması, tarihsel saat önerisi ve sıralanabilir gözlem tablosu.
 - Trafik verisi GitHub Actions tarafından günlük çekilir; geçersiz/eksik kaynak yanıtı son başarılı JSON dosyasını değiştirmez. Son başarılı dosya tarayıcıda önbelleklenebilir.
 - Yükleniyor, boş veri, kaynak hatası ve son başarılı veriye dönme durumları.
@@ -47,6 +47,14 @@ python scripts/fetch_ibb_traffic.py
 ```
 
 İkinci komut internet bağlantısı ve İBB uç noktasının erişilebilir olmasını gerektirir; yanıt doğrulanamazsa var olan son başarılı `data/traffic.json` korunur. Statik dosyaları `file://` ile açmak, fetch/CSP davranışını doğru test etmez; yerel sunucu kullan.
+
+## Canlı TomTom trafik katmanı (Vercel)
+
+1. Vercel Project Settings → Environment Variables bölümünde `TOMTOM_API_KEY` adında Production değişkeni oluştur. API anahtarını dosyaya veya GitHub'a koyma.
+2. TomTom panelinde Traffic Raster Flow Tiles ürününün bu anahtar için açık olduğunu ve kullanım kotasını kontrol et. Mümkünse anahtarın ürün erişimini sınırla ve kullanımını izle.
+3. `api/traffic-tile.js`, anahtarı sunucu tarafında tutarak TomTom Traffic Flow Tiles uç noktasını vekil olarak çağırır. İstemciye anahtar gönderilmez.
+4. Proxy tarayıcı çağrılarında Vercel proje referrer/origin değerini kontrol ederek basit hotlink koruması uygular; bu, bağımsız API rate limiter yerine geçmez. TomTom kotasını gözlemle.
+5. NGINX/Docker sürümü statik sunucudur; bu Vercel fonksiyonunu çalıştırmaz. Container için canlı trafik katmanı ayrıca proxy entegrasyonu gerektirir.
 
 ## Vercel'e yayınlama
 

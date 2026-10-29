@@ -9,7 +9,8 @@
 - **GitHub Actions güvenlik gate:** Gitleaks, Docker build, UID/GID doğrulaması, salt okunur smoke test ve Trivy CRITICAL taraması. Kritik bulgu release adımını başarısız yapar.
 - **NGINX unprivileged container:** Aynı statik dosyaları 8080 portundan `101:101` ile sunacak şekilde tasarlanmıştır.
 - **Cloud Run/Azure Container Apps:** Ödev kartının hedefidir ama kullanıcı hesabı doğrulama/ödeme engeli nedeniyle şimdilik ertelenmiştir. Canlı bulut bileşeni varmış gibi raporlanmamalıdır.
-- **OpenStreetMap:** Sadece bölgesel harita çerçevesi. Harita hizmetine erişim anında tarayıcı OSM'ye bağlanır.
+- **Leaflet + OpenStreetMap:** İstanbul taban haritasını tarayıcıda gösterir. Harita karoları `*.tile.openstreetmap.org` üzerinden gelir.
+- **TomTom Traffic Flow Tiles:** Renkli canlı yol akışı katmanı `api/traffic-tile.js` Vercel sunucu fonksiyonu üzerinden çağrılır; `TOMTOM_API_KEY` istemciye gönderilmez. NGINX statik container bu sunucu fonksiyonunu çalıştırmadığından container dağıtımında ek proxy gerekir.
 
 ## Veri akışı (DFD)
 
@@ -21,11 +22,14 @@ flowchart LR
     I[İBB Trafik İndeks API] -->|JSON gözlemleri| A[GitHub Actions veri çekimi]
     A -->|Doğrulama / normalize / son başarılıyı koru| D[data/traffic.json]
     D -->|public JSON fetch| V
-    O[OpenStreetMap] -->|Yalnız harita iframe'i| U
+    O[OpenStreetMap Tiles] -->|Temel harita karoları| U
+    U -->|Aynı-origin karo isteği| T[api/traffic-tile.js]
+    T -->|Sunucu tarafı API anahtarı| TT[TomTom Traffic Flow Tiles]
+    TT -->|PNG trafik karoları| U
     G[GitHub repo] --> S[Gitleaks]
     G --> B[Docker build + non-root / read-only test]
-    B --> T[Trivy CRITICAL gate]
-    T -->|Yalnız taramayı geçen image| R[İleride: registry / Cloud Run]
+    B --> TV[Trivy CRITICAL gate]
+    TV -->|Yalnız taramayı geçen image| R[İleride: registry / Cloud Run]
 ```
 
 ## Güven sınırları
@@ -35,7 +39,7 @@ flowchart LR
 3. **Depo/CI:** Gerçek token, parola veya service-account key depoya konmaz. Workflow permissions en az yetkiyle tanımlanır.
 4. **Web yayını:** Vercel başlıkları CSP, HSTS, nosniff, Referrer-Policy, Permissions-Policy ve frame koruması sağlar. Gerçek derece/score yalnızca online scan sonrası raporlanır.
 5. **Container:** Production image non-root (`101:101`) ve read-only filesystem testi için yapılandırılır. Trivy critical gate geçmeden deploy adımı koşmamalıdır.
-6. **Harita dış hizmeti:** OSM yalnız harita görüntüsünü getirir; plan formu veya yerel planlar bu URL'ye parametre olarak gönderilmez.
+6. **Harita dış hizmeti:** OpenStreetMap yalnız taban harita karolarını, TomTom ise trafik katmanını sağlar. Plan formu veya sipariş verisi bu hizmetlere gönderilmez. TomTom anahtarı Vercel serverless fonksiyonunda tutulur; referrer kontrolü yalnızca ek bir hotlink önlemidir.
 
 ## Veri sınıflandırması ve sınırlılıklar
 

@@ -37,6 +37,9 @@ class UiContractTests(unittest.TestCase):
         self.assertTrue(required.issubset(set(parser.ids)), f"Eksik HTML ID'leri: {sorted(required - set(parser.ids))}")
         self.assertIn("./traffic-dashboard.js", parser.scripts)
         self.assertIn("./map.js", parser.scripts)
+        self.assertIn("https://unpkg.com/leaflet@1.9.4/dist/leaflet.js", parser.scripts)
+        self.assertIn('id="istanbul-map-canvas"', (ROOT / "index.html").read_text(encoding="utf-8"))
+        self.assertTrue((ROOT / "api" / "traffic-tile.js").is_file())
         dashboard_js = (ROOT / "traffic-dashboard.js").read_text(encoding="utf-8")
         self.assertIn("raw.githubusercontent.com/oguzhansapmaz/kurye-cikis-saati-planlayici/traffic-data/data/traffic.json", dashboard_js)
         self.assertIn("function fetchLiveIbbData()", dashboard_js)
@@ -75,10 +78,18 @@ class UiContractTests(unittest.TestCase):
         vercel = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
         headers = vercel["headers"][0]["headers"]
         csp = next(item["value"] for item in headers if item["key"] == "Content-Security-Policy")
-        self.assertIn("script-src 'self'", csp)
-        self.assertNotIn("unsafe-inline", csp)
-        self.assertNotIn("unsafe-eval", csp)
+        self.assertIn("script-src 'self' https://unpkg.com", csp)
+        self.assertIn("style-src-attr 'unsafe-inline'", csp)
+        self.assertNotIn("'unsafe-inline'", csp.split("script-src", 1)[1].split(";", 1)[0])
+        self.assertNotIn("'unsafe-eval'", csp)
+        self.assertIn("https://*.tile.openstreetmap.org", csp)
         self.assertIn("https://raw.githubusercontent.com", csp)
+
+    def test_tomtom_proxy_keeps_key_server_side(self):
+        api = (ROOT / "api" / "traffic-tile.js").read_text(encoding="utf-8")
+        self.assertIn("process.env.TOMTOM_API_KEY", api)
+        self.assertIn('url.searchParams.set("key", key)', api)
+        self.assertNotIn("TOMTOM_API_KEY =", api)
 
 
 if __name__ == "__main__":

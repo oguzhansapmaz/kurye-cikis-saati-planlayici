@@ -23,7 +23,8 @@
 
 ## Trafik verisi ve harita için ek kontrol
 
-- Ana sayfadaki İstanbul haritası OpenStreetMap gömülü harita çerçevesini kullanır. Bu nedenle harita açıldığında tarayıcı OpenStreetMap alan adına bağlanır; “harici çağrı yok” iddiası kullanılmamalıdır.
+- Ana sayfadaki İstanbul haritası Leaflet ve OpenStreetMap karo hizmetini kullanır; tarayıcı `unpkg.com` ve `*.tile.openstreetmap.org` kaynaklarına bağlanır. Canlı trafik katmanı Vercel `api/traffic-tile.js` üzerinden TomTom Traffic Flow Tiles çağırır. “Harici çağrı yok” iddiası kullanılmamalıdır.
+- `TOMTOM_API_KEY` yalnızca Vercel Production Environment Variables içinde tutulmalıdır; kaynak kodunda veya GitHub'da yer almamalıdır. TomTom anahtarı ürün/alan adı kısıtlamaları ve kullanım gözlemiyle korunmalıdır. Proxy referrer kontrolü tek başına güçlü bir kota/rate-limit sistemi değildir.
 - `Referrer-Policy: strict-origin-when-cross-origin` tüm kaynağı değil yalnızca origin bilgisini üçüncü tarafa gönderir. OSM atfı haritanın yanında görünür.
 - İBB endeks kartı gerçek veri dosyası çekildiyse şehir-geneli tarihsel indeksi gösterir; ilçe/rota bazlı canlı trafik veya gerçek zamanlı kurye konumu iddia etmez. Boş veri durumunda sahte sayı üretilmez.
 
