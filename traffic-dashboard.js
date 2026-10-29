@@ -5,6 +5,8 @@
   // The scheduled workflow writes the latest validated JSON to a data-only branch.
   // This avoids requiring a full Vercel rebuild for each daily snapshot and leaves main protected.
   const REMOTE_DATA_URL = 'https://raw.githubusercontent.com/oguzhansapmaz/kurye-cikis-saati-planlayici/traffic-data/data/traffic.json';
+  const IBB_HISTORY_URL = 'https://api.ibb.gov.tr/tkmservices/api/TrafficData/v1/TrafficIndexHistory/28/H';
+  const IBB_CURRENT_URL = 'https://api.ibb.gov.tr/tkmservices/api/TrafficData/v1/TrafficIndexHistory/1/5M';
   const CACHE_NAMESPACE = 'kuryeplan.trafficData.v1';
   const DAY_NAMES = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
   const DAY_ABBR = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
@@ -111,7 +113,7 @@
     state.fromLocalCache = Boolean(fromCache);
     if (!state.observations.length || !data.currentObservation) {
       contentEl.hidden = true;
-      setStatus('empty', 'Trafik verisi henüz hazır değil', 'Resmî veri, GitHub Actions içindeki “İBB trafik verisini güncelle” akışı ilk kez çalıştırılınca alınacak. Bu sırada gerçek olmayan örnek değer göstermiyoruz.', true);
+      setStatus('empty', 'Trafik verisi henüz hazır değil', 'Resmî İBB API veya doğrulanmış veri dosyasına henüz ulaşılamadı. Gerçek olmayan örnek değer göstermiyoruz; bağlantı erişilebilir olduğunda yeniden deneyebilirsin.', true);
       return;
     }
     contentEl.hidden = false;
@@ -132,6 +134,96 @@
     return response.json();
   }
 
+  async function fetchJsonWithTimeout(sourceUrl, timeoutMs) {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(sourceUrl, {
+        cache: 'no-store', credentials: 'omit', mode: 'cors', signal: controller.signal,
+        headers: { Accept: 'application/json, */*' }
+      });
+      if (!response.ok) throw new Error(`İBB API HTTP ${response.status} döndürdü`);
+      return await response.json();
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  }
+
+  function unwrapIbbRows(payload) {
+    if (Array.isArray(payload)) return payload.filter((row) => row && typeof row === 'object');
+    if (payload && typeof payload === 'object') {
+      for (const key of ['data', 'Data', 'items', 'Items', 'value', 'Value', 'result', 'Result']) {
+        const value = payload[key];
+        if (Array.isArray(value)) return value.filter((row) => row && typeof row === 'object');
+        if (value && typeof value === 'object') {
+          const nested = unwrapIbbRows(value);
+          if (nested.length) return nested;
+        }
+      }
+      if ('TrafficIndex' in payload || 'trafficIndex' in payload) return [payload];
+    }
+    return [];
+  }
+
+  function normaliseIbbRows(payload, frequency) {
+    const rows = unwrapIbbRows(payload);
+    const records = new Map();
+    for (const row of rows) {
+      const keyMap = Object.fromEntries(Object.entries(row).map(([key, value]) => [key.toLowerCase(), value]));
+      const rawIndex = keyMap.trafficindex ?? keyMap.index ?? keyMap.value;
+      const rawTime = keyMap.trafficindexdate ?? keyMap.observedat ?? keyMap.timestamp ?? keyMap.date;
+      const index = Number(rawIndex);
+      if (!Number.isFinite(index) || index < 0 || index > 100 || rawTime == null) continue;
+      let timeText = String(rawTime).trim();
+      // İBB history timestamps are commonly timezone-naive Istanbul local times.
+      if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(timeText)) timeText += '+03:00';
+      const time = new Date(timeText);
+      if (Number.isNaN(time.getTime())) continue;
+      const observedAt = time.toISOString();
+      records.set(observedAt, { observedAt, index: Math.round(index * 100) / 100, sourceFrequency: frequency });
+    }
+    return [...records.values()].sort((a, b) => Date.parse(a.observedAt) - Date.parse(b.observedAt));
+  }
+
+  async function fetchLiveIbbData() {
+    // Browser-side fallback is useful when GitHub-hosted runners cannot reach İBB.
+    // If CORS or the source is unavailable, the normal cache/empty-state path remains.
+    const history = normaliseIbbRows(await fetchJsonWithTimeout(IBB_HISTORY_URL, 9000), 'H');
+    if (history.length < 24) throw new Error(`İBB geçmiş verisinde en az 24 gözlem gerekir; gelen: ${history.length}`);
+    let shortInterval = [];
+    let currentError = null;
+    try {
+      shortInterval = normaliseIbbRows(await fetchJsonWithTimeout(IBB_CURRENT_URL, 9000), '5M');
+      if (!shortInterval.length) throw new Error('Güncel 5 dakikalık uç noktada geçerli gözlem yok');
+    } catch (error) {
+      currentError = String(error && error.message ? error.message : error);
+    }
+    const current = shortInterval.length
+      ? { ...shortInterval[shortInterval.length - 1], measurementType: '5-minute-index', isCurrentFrequency: true }
+      : { ...history[history.length - 1], measurementType: 'hourly-history-fallback', isCurrentFrequency: false };
+    return {
+      schemaVersion: 1,
+      status: shortInterval.length ? 'available' : 'partial',
+      source: {
+        name: 'İBB Açık Veri Portalı — Trafik İndeks Değeri Web Servisi',
+        datasetUrl: SOURCE_URL,
+        apiHistoryUrl: IBB_HISTORY_URL,
+        apiCurrentUrl: IBB_CURRENT_URL,
+        licenseUrl: 'https://data.ibb.gov.tr/license',
+        geography: 'İstanbul geneli; ilçe/rota bazında ayrıştırılmaz'
+      },
+      timezone: 'Europe/Istanbul',
+      fetchedAt: new Date().toISOString(),
+      historyWindowDays: 28,
+      historyCount: history.length,
+      observations: history,
+      currentObservation: current,
+      snapshots: [],
+      warning: currentError ? `Güncel 5 dakikalık uç nokta yanıt vermedi; saatlik tarihsel gözlem kullanılıyor. ${currentError}` : null,
+      methodologyNote: 'Tarihsel karşılaştırma ve planlama desteğidir; canlı rota süresi, ilçe bazlı trafik, navigasyon veya gelecek tahmini değildir.'
+    };
+  }
+
   async function loadTrafficData() {
     setStatus('loading', 'Trafik verisi yükleniyor', 'Son başarılı İBB veri dosyası okunuyor.', false);
     contentEl.hidden = true;
@@ -149,6 +241,14 @@
       } catch (error) {
         lastError = error;
       }
+    }
+
+    try {
+      const liveData = await fetchLiveIbbData();
+      setDashboardState(liveData, false);
+      return;
+    } catch (liveError) {
+      lastError = liveError;
     }
 
     const cached = safeReadCache();

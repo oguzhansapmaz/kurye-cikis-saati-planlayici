@@ -39,6 +39,11 @@ class UiContractTests(unittest.TestCase):
         self.assertIn("./map.js", parser.scripts)
         dashboard_js = (ROOT / "traffic-dashboard.js").read_text(encoding="utf-8")
         self.assertIn("raw.githubusercontent.com/oguzhansapmaz/kurye-cikis-saati-planlayici/traffic-data/data/traffic.json", dashboard_js)
+        self.assertIn("function fetchLiveIbbData()", dashboard_js)
+        self.assertIn("api.ibb.gov.tr/tkmservices/api/TrafficData", dashboard_js)
+        for config_path in (ROOT / "vercel.json", ROOT / "nginx" / "default.conf"):
+            config = config_path.read_text(encoding="utf-8")
+            self.assertIn("https://api.ibb.gov.tr", config)
 
     def test_initial_dataset_does_not_fabricate_observations(self):
         data = json.loads((ROOT / "data" / "traffic.json").read_text(encoding="utf-8"))

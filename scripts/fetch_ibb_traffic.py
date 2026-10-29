@@ -33,7 +33,7 @@ USER_AGENT = "Kuryeplan-course-project/1.0 (scheduled open-data refresh)"
 RETRYABLE_HTTP_CODES = {408, 425, 429, 500, 502, 503, 504}
 
 
-def fetch_json(url: str, timeout: int = 45, attempts: int = 3) -> Any:
+def fetch_json(url: str, timeout: int = 12, attempts: int = 2) -> Any:
     """Fetch read-only JSON with bounded retries for transient upstream failures.
 
     The İBB history API occasionally times out even when the endpoint is healthy.
@@ -234,9 +234,37 @@ def atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def main() -> int:
+    # Read the currently checked-out data first. In GitHub Actions this is the last
+    # successful JSON restored from the data-only branch, or the explicit empty schema
+    # on first run. Never replace it with fabricated/example observations.
+    previous_file = _read_previous(OUTPUT)
     print(f"Fetching hourly history from {HISTORY_URL}")
-    # The historical endpoint is required. Do not replace a last-good file if it fails.
-    history_json = fetch_json(HISTORY_URL)
+    try:
+        history_json = fetch_json(HISTORY_URL)
+    except Exception as exc:
+        has_last_good = (
+            isinstance(previous_file.get("observations"), list)
+            and len(previous_file.get("observations", [])) >= 24
+            and isinstance(previous_file.get("currentObservation"), dict)
+        )
+        if has_last_good:
+            print(
+                f"WARNING: official IBB history is unavailable ({type(exc).__name__}: {exc}). "
+                "Keeping the last successfully validated JSON; no data was overwritten.",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"WARNING: official IBB history is unavailable ({type(exc).__name__}: {exc}). "
+                "No validated snapshot exists yet; keeping the explicit empty schema. "
+                "The UI will show the unavailable state and may try the official API in the browser. "
+                "No synthetic traffic values were created.",
+                file=sys.stderr,
+            )
+        # Treat upstream unavailability as a handled operational condition. This keeps
+        # scheduled CI healthy while ensuring the data contract stays honest.
+        return 0
+
     history_records = normalise_records(history_json, "H")
     if len(history_records) < 24:
         raise RuntimeError(f"Insufficient history after normalisation: {len(history_records)} rows")

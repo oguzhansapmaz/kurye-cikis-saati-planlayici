@@ -2,8 +2,11 @@ import json
 import unittest
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
+from pathlib import Path
+import tempfile
 from urllib.error import URLError
 
+import scripts.fetch_ibb_traffic as traffic_fetcher
 from scripts.fetch_ibb_traffic import build_payload, fetch_json, normalise_records
 
 
@@ -25,6 +28,35 @@ class TrafficPipelineTests(unittest.TestCase):
             with self.assertRaises(HTTPError):
                 fetch_json("https://example.invalid/data", attempts=3)
         self.assertEqual(opener.call_count, 1)
+
+
+    def test_main_keeps_last_good_data_when_history_endpoint_fails(self):
+        valid_payload = {
+            "schemaVersion": 1,
+            "status": "available",
+            "observations": [
+                {"observedAt": f"2026-10-{day:02d}T09:00:00+03:00", "index": 40, "sourceFrequency": "H"}
+                for day in range(1, 25)
+            ],
+            "currentObservation": {"observedAt": "2026-10-29T09:00:00+03:00", "index": 40},
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "traffic.json"
+            output.write_text(json.dumps(valid_payload), encoding="utf-8")
+            with patch.object(traffic_fetcher, "OUTPUT", output), patch.object(traffic_fetcher, "fetch_json", side_effect=URLError("timed out")):
+                self.assertEqual(traffic_fetcher.main(), 0)
+            self.assertEqual(json.loads(output.read_text(encoding="utf-8")), valid_payload)
+
+    def test_main_handles_first_run_source_failure_without_fake_data(self):
+        empty_payload = {"schemaVersion": 1, "status": "empty", "observations": [], "currentObservation": None}
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "traffic.json"
+            output.write_text(json.dumps(empty_payload), encoding="utf-8")
+            with patch.object(traffic_fetcher, "OUTPUT", output), patch.object(traffic_fetcher, "fetch_json", side_effect=URLError("timed out")):
+                self.assertEqual(traffic_fetcher.main(), 0)
+            result = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(result["observations"], [])
+            self.assertIsNone(result["currentObservation"])
 
     def test_normalise_official_field_names_and_sort(self):
         source = [
