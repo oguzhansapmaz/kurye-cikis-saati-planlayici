@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Scan repository for secrets
@@ -33,7 +33,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Build hardened image
         run: docker build --pull -t kurye-planlayici:${{ github.sha }} .
       - name: Verify image declares non-root user
@@ -105,7 +105,7 @@ jobs:
       IMAGE_NAME: kurye-planlayici
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Validate Cloud Run configuration
         env:
           WIF_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
