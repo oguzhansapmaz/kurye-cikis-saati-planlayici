@@ -26,6 +26,8 @@
 **Kurallar:** Kırmızı/yeşil sonuç yalnızca kendi gerçek CI çalıştırmasının durumudur. Canlı çalıştırma, kullanıcı testi, tarama veya bulut kaynağı yapılmadan başarı varmış gibi yazılmamalıdır.
 
 - Kullanıcı arayüzü gereksinimleri: İBB veri hattı, 3 KPI, zaman serisi, gün × saat ısı haritası, tarihsel çıkış saati önerisi, boş/hata/yüklenme durumları ve sıralanabilir tablolar bu pakete eklendi; ilk gerçek veri çekimi sonrası tarayıcıda tekrar doğrulanmalı.
-- Otomatik yerel testler: `python -m unittest discover -s tests -v` ile 13 test ve `node --check` ile 3 JS dosyası sözdizimi kontrol edildi. Bu testler gerçek İBB API çağrısı, Docker image build, Lighthouse veya kullanıcı testi yerine geçmez.
+- Otomatik yerel testler: `python -m unittest discover -s tests -v` ile 14 test ve `node --check` ile 3 JS dosyası sözdizimi kontrol edildi. Bu testler gerçek İBB API çağrısı, Docker image build, Lighthouse veya kullanıcı testi yerine geçmez.
 
 - İBB API erişimi GitHub runner üzerinden zaman aşımına uğrarsa veri hattı mevcut doğrulanmış JSON dosyasını korur; henüz veri yoksa boş şemayı yayınlar. Arayüz ek olarak resmî İBB API'sini tarayıcıdan kısa zaman aşımıyla denemektedir. Bu yolların gerçek trafik verisi ürettiği, API erişilebilir olduğu doğrulanmadan iddia edilmemelidir.
+
+- Canlı harita entegrasyonu: Leaflet/OpenStreetMap taban haritası ve TomTom Traffic Flow Tiles için Vercel serverless proxy (`api/traffic-tile.js`) eklidir. Gerçek karoların yüklendiği, yayında durum mesajı ile ayrıca doğrulanmalıdır.

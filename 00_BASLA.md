@@ -1,52 +1,47 @@
-# Kuryeplan — güncel başlangıç rehberi
+# Kuryeplan — tek paket başlangıç rehberi
 
-Kuryeplan, Kullanıcı Arayüzü Tasarımı (BVA 2245) ve Bulut Bilişim ve Siber Güvenlik ödevleri için ortak üründür. Ürün Vercel'de yayımlandı. İBB trafik veri hattı, planlama panosu ve test dosyaları bu sürümde eklendi; ilk gerçek veri çekimi ve son arayüz değişiklikleri sonrası doğrulama hâlâ yapılmalıdır.
+Bu klasör, UI Design ve Cloud Security ödevlerinin ortak proje kaynağıdır. İstanbul haritası Leaflet/OpenStreetMap ile çalışır; canlı trafik karoları Vercel sunucu fonksiyonu üzerinden TomTom'dan alınır. Tarihsel İBB indeks paneli ayrı veri hattıdır ve gerçek veriler gelmeden boş durum göstermesi doğrudur.
 
-## 0. Başlangıç kanıtlarını kaydetmeden güncellemeyi uygulama
+## 1. Mevcut depo üzerine uygula
 
-Önce `Kuryeplan_Baseline_Taramalari_Once.zip` paketindeki iki workflow dosyasını mevcut klasöre ekleyip commit/push et. GitHub Actions'ta ZAP workflow'unu `before`, Trivy baseline workflow'unu elle çalıştır; Artifact dosyalarını indirip sakla. Bundan sonra `Kuryeplan_Kalan_Odev_Paketi.zip` içeriğini mevcut proje klasörünün üzerine çıkarıp yeni kodu commit/push edebilirsin. Bu sırayı uygularsan `before` raporları yeni sürümden önceki canlı siteyi ve yalnızca tarama amacıyla ayrılmış eski test imajını temsil eder. `.git` klasörünü silme.
+ZIP'in içindeki dosyaları mevcut proje klasörüne çıkar ve sorulursa dosyaların üzerine yaz. **Mevcut ` .git` klasörünü silme** (başındaki boşluk olmadan adı `.git` olmalı); ZIP'in içinde `.git` bulunmaz.
 
-## 1. Yerelde aç
+Proje dizini örneği:
+`C:\Users\Oguzhan Sapmaz\Desktop\kurye-cikis-saati-planlayici`
 
-Anaconda Prompt veya CMD ile proje köküne girip, sistemde mevcut Python'u kullan:
+## 2. TomTom anahtarı
 
-```bat
-C:\Anaconda3\envs\rayli-agi\python.exe -m http.server 8081 --bind 127.0.0.1
-```
+Vercel Project Settings → Environment Variables bölümünde değişken adı tam olarak `TOMTOM_API_KEY` olmalı ve Production için kaydedilmelidir. Anahtarın kendisini HTML/JavaScript dosyalarına, GitHub'a veya ekran görüntülerine koyma. TomTom panelinde Traffic Raster Flow Tiles ürün erişiminin açık olduğundan emin ol. Sunucu tarafında çalışan bu proxy için alan adı kısıtlaması istekleri engellerse anahtarın ürün kısıtını ve TomTom'un key yönetimi kurallarını kontrol et; kullanımı/quotayı izle.
 
-`http://127.0.0.1:8081` adresini aç. Harita için internet gerekir. Trafik paneli, `data/traffic.json` ilk kez gerçek verilerle doldurulana kadar boş durum gösterebilir; bu beklenen ve sahte sayı göstermeyen davranıştır.
+## 3. Testler
 
-## 2. Testler
-
-```bat
-C:\Anaconda3\envs\rayli-agi\python.exe -m unittest discover -s tests -v
-```
-
-Veri hattını elle çalıştırmak için internete bağlıyken:
+Anaconda Prompt'ta proje köküne geç ve çalıştır:
 
 ```bat
-C:\Anaconda3\envs\rayli-agi\python.exe scripts\fetch_ibb_traffic.py
+python -m unittest discover -s tests -v
+node --check app.js
+node --check map.js
+node --check traffic-dashboard.js
+node --check api\traffic-tile.js
 ```
 
-Başarısız kaynak yanıtı son başarılı `data/traffic.json` dosyasını değiştirmemelidir.
+Python testleri `OK` ile bitmeli; `node --check` komutları hata vermemelidir.
 
-## 3. İlk canlı veri çekimi
+## 4. GitHub'a gönder
 
-GitHub'a gönderdikten sonra **Actions → “İBB trafik verisini güncelle” → Run workflow** seç. Tamamlanırsa action `data/traffic.json` dosyasını commit eder. Başarısız olursa log'u incele; veriyi elle uydurarak doldurma. JSON boşsa dashboard'un “veri henüz hazır değil” mesajı göstermesi normaldir.
+```bat
+git status --short
+git add -A
+git commit -m "Finalize Istanbul traffic map and coursework evidence"
+git push
+```
 
-## 4. Web yayını
+`nothing to commit` derse zaten commit edilmiş olabilir; `git log -1 --oneline` ile commit'i kontrol et. Push sonrası GitHub Actions'ta yeni `Security gate and Cloud Run release` çalışmasını ve Vercel deployment'ını kontrol et.
 
-Vercel mevcut depoya bağlıdır. Kaynak koda commit/push yaptıktan sonra Vercel deployment durumunu kontrol et. Vercel build komutu gerektiren bir framework kullanılmıyor; statik HTML/CSS/JS ve `data/traffic.json` yayımlanır.
+## 5. Canlı trafik katmanını doğrula
 
-## 5. Güvenlik ve kanıt
+Yayın sonrası `https://kurye-cikis-saati-planlayici.vercel.app/api/traffic-tile?health=1` adresini aç. `configured: true` anahtarın Vercel ortamında bulunduğunu gösterir; bu **TomTom trafik karolarının başarılı döndüğünü tek başına kanıtlamaz**. Site haritasındaki durum yazısında `Canlı TomTom trafik katmanı açık` görülmeli. Hata durumunda Vercel Functions log'undan HTTP 502/403 sebebini ve TomTom ürün/anahtar erişimini kontrol et.
 
-- `.github/workflows/security.yml`: Gitleaks + Docker non-root/read-only + Trivy critical gate.
-- `.github/workflows/trivy-baseline.yml`: BEFORE imaj taraması; yalnızca rapor üretir ve baseline imajını yayımlamaz.
-- `.github/workflows/zap-baseline.yml`: sadece kendi Vercel sitene pasif ZAP baseline taraması; önce `before`, düzeltmeler/yeni sürüm sonrası `after`.
-- `docs/container-proof.md`, `docs/trivy-before-after.md`, `docs/security-checklist.md` gerçek test komutlarını ve kanıtları anlatır.
+## 6. Tarihsel İBB verisi ve ödev kanıtları
 
-Bulut sağlayıcısı/yayını, bütçe ve izleme alarmı kullanıcı isteğiyle şimdilik ertelenmiştir. Bunları tamamlandı gibi raporlama; kişisel karttaki Azure Container Apps/Google Cloud Run şartı için öğretim elemanıyla alternatif onayını netleştir.
-
-## 6. Durum
-
-Kod taslakları ve otomatik testler hazırdır. İlk gerçek İBB çekimi, live UI smoke test, ZAP before/after, Trivy baseline JSON, Lighthouse screenshot'ı, kullanıcı testi, 60–90 sn video, portföy yayını ve cloud/budget/log evidence hâlâ gerekli. Bu belgelerdeki kutuları ancak gerçek sonuç alındıktan sonra işaretle.
+GitHub Actions → `İBB trafik verisini güncelle` workflow'unu çalıştır. `data/traffic.json` içinde `observations` boşsa tarihsel analiz henüz gerçek verilerle dolmamıştır; sayı uydurma. Kullanıcı testi, Lighthouse, demo videosu, ZAP/Trivy karşılaştırması ve bulut yayını ancak gerçek kanıt üretildiğinde tamamlandı diye işaretlenmelidir. Bulut yayını şu an ertelenmiştir ve yönergede zorunluysa öğretim elemanıyla netleştirilmelidir.
